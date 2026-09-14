@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Sem conexão · Leandro Gym</title>
+    <meta name="theme-color" content="#05070a" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #05070a;
+        --surface: #0c1117;
+        --line: #22303b;
+        --fg: #edf7fa;
+        --muted: #8ba0aa;
+        --accent: #55e7f0;
+        --accent-fg: #021012;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+        background-image:
+          radial-gradient(circle at 85% -10%, rgb(85 231 240 / 0.09), transparent 32rem),
+          radial-gradient(circle at -10% 70%, rgb(71 230 161 / 0.05), transparent 28rem);
+      }
+      main {
+        max-width: 22rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        margin-bottom: 20px;
+        font-size: 28px;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 8px;
+      }
+      p {
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 0 0 24px;
+        font-size: 0.95rem;
+      }
+      button {
+        appearance: none;
+        border: none;
+        cursor: pointer;
+        background: var(--accent);
+        color: var(--accent-fg);
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 12px 20px;
+        border-radius: 12px;
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+      .hint {
+        margin-top: 20px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge" aria-hidden="true">🏋️</div>
+      <h1>Você está offline</h1>
+      <p>
+        Sem conexão agora. As séries que você registrar durante o treino ficam salvas no
+        aparelho e sobem sozinhas quando a internet voltar.
+      </p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+      <div class="hint" id="status">Aguardando conexão…</div>
+    </main>
+    <script>
+      // Recarrega automaticamente assim que a conexão voltar.
+      window.addEventListener("online", function () {
+        document.getElementById("status").textContent = "Conexão restaurada. Recarregando…";
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

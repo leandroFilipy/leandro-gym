@@ -1,0 +1,85 @@
+@import "tailwindcss" source("../");
+
+/* Interface escura, tecnológica e minimalista. */
+@theme {
+  --color-bg: #05070a;
+  --color-surface: #0c1117;
+  --color-surface-2: #121a22;
+  --color-line: #22303b;
+  --color-fg: #edf7fa;
+  --color-muted: #8ba0aa;
+  --color-faint: #536872;
+  --color-accent: #55e7f0;
+  --color-accent-fg: #021012;
+  --color-success: #47e6a1;
+  --color-warn: #f3c969;
+  --color-danger: #ff7f8f;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(circle at 85% -10%, rgb(85 231 240 / 0.09), transparent 32rem),
+    radial-gradient(circle at -10% 70%, rgb(71 230 161 / 0.05), transparent 28rem);
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background-image:
+    linear-gradient(rgb(85 231 240 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(85 231 240 / 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+::selection {
+  background: rgb(85 231 240 / 0.25);
+  color: var(--color-fg);
+}
+
+/* Números grandes com largura fixa (cronômetro, cargas) */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Área segura do iPhone para a bottom nav */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}

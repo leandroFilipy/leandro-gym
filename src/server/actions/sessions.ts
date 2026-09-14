@@ -1,0 +1,108 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { db } from "../db";
+import { getSettings, requireUserId } from "../session";
+import { todayIn, toDbDate } from "@/lib/dates";
+import { fail, ok, refreshApp, type ActionResult } from "./_utils";
+
+/** Inicia (ou retoma) o treino de um dia da ficha e abre o modo academia. */
+export async function startSessionAction(workoutDayId: string) {
+  const userId = await requireUserId();
+  const settings = await getSettings(userId);
+  const today = toDbDate(todayIn(settings.timezone));
+
+  const day = await db.workoutDay.findFirst({
+    where: { id: workoutDayId, plan: { userId } },
+    include: { exercises: { orderBy: { order: "asc" } } },
+  });
+  if (!day) redirect("/treino");
+
+  const open = await db.workoutSession.findFirst({
+    where: { userId, workoutDayId, date: today, finishedAt: null },
+    select: { id: true },
+  });
+  if (open) redirect(`/treino/sessao/${open.id}`);
+
+  const session = await db.workoutSession.create({
+    data: {
+      userId,
+      workoutDayId: day.id,
+      name: day.name,
+      date: today,
+      exercises: {
+        create: day.exercises.map((e, i) => ({
+          exerciseId: e.exerciseId,
+          order: i + 1,
+          plannedSets: e.plannedSets,
+          repMin: e.repMin,
+          repMax: e.repMax,
+          restSeconds: e.restSeconds,
+          notes: e.notes,
+        })),
+      },
+    },
+  });
+  refreshApp();
+  redirect(`/treino/sessao/${session.id}`);
+}
+
+/** Treino livre (sem ficha). Exercícios são adicionados durante a sessão. */
+export async function startFreeSessionAction() {
+  const userId = await requireUserId();
+  const settings = await getSettings(userId);
+  const session = await db.workoutSession.create({
+    data: { userId, name: "Treino livre", date: toDbDate(todayIn(settings.timezone)) },
+  });
+  redirect(`/treino/sessao/${session.id}`);
+}
+
+export async function addExerciseToSessionAction(sessionId: string, exerciseId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const [session, exercise, settings] = await Promise.all([
+    db.workoutSession.findFirst({ where: { id: sessionId, userId }, include: { _count: { select: { exercises: true } } } }),
+    db.exercise.findFirst({ where: { id: exerciseId, userId } }),
+    getSettings(userId),
+  ]);
+  if (!session || !exercise) return fail("Não encontrado");
+
+  await db.workoutExercise.create({
+    data: {
+      sessionId,
+      exerciseId,
+      order: session._count.exercises + 1,
+      plannedSets: 3,
+      repMin: 8,
+      repMax: 12,
+      restSeconds: settings.defaultRestSeconds,
+    },
+  });
+  refreshApp();
+  return ok;
+}
+
+export async function finishSessionAction(sessionId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const r = await db.workoutSession.updateMany({
+    where: { id: sessionId, userId, finishedAt: null },
+    data: { finishedAt: new Date() },
+  });
+  if (!r.count) return fail("Sessão não encontrada ou já finalizada");
+  refreshApp();
+  return ok;
+}
+
+/** Reabre (ou continua) a sessão e volta para o modo academia. */
+export async function reopenSessionAction(sessionId: string) {
+  const userId = await requireUserId();
+  await db.workoutSession.updateMany({ where: { id: sessionId, userId }, data: { finishedAt: null } });
+  refreshApp();
+  redirect(`/treino/sessao/${sessionId}`);
+}
+
+export async function deleteSessionAction(sessionId: string) {
+  const userId = await requireUserId();
+  await db.workoutSession.deleteMany({ where: { id: sessionId, userId } });
+  refreshApp();
+  redirect("/treino/historico");
+}
