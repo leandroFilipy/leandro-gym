@@ -4,9 +4,9 @@
 //   (permite reabrir o treino atual com internet ruim) e, na falta dela,
 //   uma página offline dedicada.
 // - Notificação do fim do descanso e clique para abrir o app.
-const CACHE = "lg-v2";
+const CACHE = "lg-v3";
 const OFFLINE_URL = "/offline.html";
-const PRECACHE = [OFFLINE_URL, "/icons/192"];
+const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -69,8 +69,8 @@ self.addEventListener("message", (event) => {
   if (data.type === "notify") {
     self.registration.showNotification(data.title || "Leandro Gym", {
       body: data.body || "",
-      icon: "/icons/192",
-      badge: "/icons/192",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: data.tag || "lg",
       renotify: true,
       vibrate: [200, 100, 200],
@@ -104,8 +104,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "Leandro Gym", {
       body: data.body || "",
-      icon: "/icons/192",
-      badge: "/icons/192",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: data.tag || "lg-push",
       renotify: true,
       vibrate: [200, 100, 200],

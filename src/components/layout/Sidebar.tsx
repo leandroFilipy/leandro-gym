@@ -10,7 +10,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line/70 bg-bg/65 p-4 backdrop-blur-xl md:flex">
       <Link href="/" className="mb-8 flex items-center gap-2 px-2">
-        <span className="flex size-9 items-center justify-center rounded-lg border border-accent/40 bg-accent/10 font-mono text-xs font-bold text-accent shadow-[0_0_20px_rgb(85_231_240/0.12)]">CP</span>
+        <img src="/avatar.png" alt="" className="size-9 rounded-lg border border-accent/40 object-cover shadow-[0_0_20px_rgb(85_231_240/0.12)]" />
         <span className="font-semibold tracking-tight">Leandro Gym</span>
       </Link>
       <nav className="flex flex-col gap-1">

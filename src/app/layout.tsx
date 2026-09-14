@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Treino, dieta e evolução física",
   applicationName: "Leandro Gym",
   appleWebApp: { capable: true, title: "Leandro Gym", statusBarStyle: "black-translucent" },
-  icons: { icon: "/icons/192", apple: "/icons/180" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-180.png" },
 };
 
 export const viewport: Viewport = {

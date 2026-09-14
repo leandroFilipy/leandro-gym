@@ -43,6 +43,6 @@ export function requestNotificationPermission() {
 export async function notify(title: string, body: string) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   const reg = await navigator.serviceWorker?.getRegistration();
-  if (reg) await reg.showNotification(title, { body, tag: "rest", icon: "/icons/192" });
+  if (reg) await reg.showNotification(title, { body, tag: "rest", icon: "/icons/icon-192.png" });
   else new Notification(title, { body });
 }
