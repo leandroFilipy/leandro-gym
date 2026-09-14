@@ -33,7 +33,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/icons/[size]">) {
             letterSpacing: -size * 0.01,
           }}
         >
-          LG
+          CP
         </div>
       </div>
     ),
