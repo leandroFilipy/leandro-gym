@@ -8,11 +8,11 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
 import { cn } from "@/lib/cn";
 import { scaleMacros } from "@/lib/domain/nutrition";
-import { compatibleUnits, convertQuantity } from "@/lib/domain/units";
+import { decimalsForMeasure, measuresFor, stepForMeasure, toBaseQuantity, type Measure } from "@/lib/domain/units";
 import { fmtNumber } from "@/lib/format";
 import { MEAL_LABEL, UNIT_LABEL } from "@/lib/labels";
 import { addFoodToMealAction, applyFavoriteAction } from "@/server/actions/diet";
-import type { FoodUnit, MealType } from "@/generated/prisma/enums";
+import type { MealType } from "@/generated/prisma/enums";
 import { MacroLine } from "./MacroLine";
 import type { FavoriteOption, FoodOption } from "./types";
 
@@ -26,22 +26,19 @@ interface Props {
   favorites: FavoriteOption[];
 }
 
-const stepForUnit = (unit: FoodUnit, servingSize: number) =>
-  unit === "UNIT" || unit === "PORTION" ? 1 : unit === "KG" || unit === "L" ? 0.1 : servingSize >= 100 ? 10 : 5;
-
 export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds, favorites }: Props) {
   const [tab, setTab] = useState<"foods" | "favorites">("foods");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<FoodOption | null>(null);
-  const [unit, setUnit] = useState<FoodUnit>("G");
+  const [measure, setMeasure] = useState<Measure | null>(null);
   const [quantity, setQuantity] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  // Unidades que o usuário pode escolher para o alimento selecionado.
-  const units = useMemo(() => (selected ? compatibleUnits(selected.unit) : []), [selected]);
+  // Medidas disponíveis para o alimento (unidade base + compatíveis + caseiras).
+  const measures = useMemo(() => (selected ? measuresFor(selected) : []), [selected]);
   // Quantidade convertida para a unidade base do alimento (para macros e para o servidor).
-  const baseQuantity = selected ? convertQuantity(quantity, unit, selected.unit) : 0;
+  const baseQuantity = selected && measure ? toBaseQuantity(quantity, measure) : 0;
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -52,22 +49,27 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
 
   const close = () => {
     setSelected(null);
+    setMeasure(null);
     setQ("");
     setError(null);
     onClose();
   };
 
   const pick = (f: FoodOption) => {
+    const ms = measuresFor(f);
+    const baseMeasure = ms[0]; // primeira = unidade base
     setSelected(f);
-    setUnit(f.unit);
-    setQuantity(f.servingSize);
+    setMeasure(baseMeasure);
+    setQuantity(f.servingSize); // servingSize está na unidade base (fator 1)
   };
 
-  // Troca a unidade preservando a quantidade equivalente (ex.: 1500 g → 1,5 kg).
-  const changeUnit = (next: FoodUnit) => {
-    if (!selected) return;
-    setQuantity(convertQuantity(quantity, unit, next));
-    setUnit(next);
+  // Troca a medida preservando a quantidade equivalente na unidade base.
+  const changeMeasure = (next: Measure) => {
+    if (!measure) return;
+    const base = toBaseQuantity(quantity, measure);
+    const nextQty = next.toBase > 0 ? base / next.toBase : 0;
+    setQuantity(Number(nextQty.toFixed(decimalsForMeasure(next))));
+    setMeasure(next);
   };
 
   const add = () =>
@@ -99,26 +101,39 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
               {UNIT_LABEL[selected.unit]} = {fmtNumber(selected.kcal)} kcal
             </div>
           </div>
-          {units.length > 1 && (
+          {measures.length > 1 && measure && (
             <div>
               <div className="mb-1 text-center font-display text-xs font-bold uppercase tracking-[0.16em] text-muted">Medida</div>
-              <div className="grid grid-flow-col gap-1 rounded-xl bg-surface-2 p-1">
-                {units.map((u) => (
+              <div className="flex flex-wrap gap-1 rounded-xl bg-surface-2 p-1">
+                {measures.map((m) => (
                   <button
-                    key={u}
+                    key={m.id}
                     type="button"
-                    onClick={() => changeUnit(u)}
-                    className={cn("h-9 rounded-lg text-sm", u === unit ? "bg-surface font-semibold" : "text-muted")}
+                    onClick={() => changeMeasure(m)}
+                    className={cn("h-9 flex-1 whitespace-nowrap rounded-lg px-3 text-sm", m.id === measure.id ? "bg-surface font-semibold" : "text-muted")}
                   >
-                    {UNIT_LABEL[u]}
+                    {m.label}
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <Stepper label="Quantidade" unit={UNIT_LABEL[unit]} value={quantity} step={stepForUnit(unit, selected.servingSize)} min={0} decimals={unit === "KG" || unit === "L" ? 2 : 1} onChange={setQuantity} />
+          {measure && (
+            <Stepper
+              label="Quantidade"
+              unit={measure.label}
+              value={quantity}
+              step={stepForMeasure(measure, selected.servingSize)}
+              min={0}
+              decimals={decimalsForMeasure(measure)}
+              onChange={setQuantity}
+            />
+          )}
           <div className="rounded-2xl bg-surface-2 p-3 text-center">
             <MacroLine m={scaleMacros(selected, baseQuantity)} className="text-sm" />
+            {measure && !measure.id.startsWith("u:") && baseQuantity > 0 && (
+              <div className="mt-1 text-xs text-faint">≈ {fmtNumber(Math.round(baseQuantity))} {UNIT_LABEL[selected.unit]}</div>
+            )}
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <Button size="lg" block disabled={pending || baseQuantity <= 0} onClick={add}>
