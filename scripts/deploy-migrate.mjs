@@ -28,3 +28,14 @@ try {
   console.error("[deploy-migrate] Falha ao aplicar migrações (build segue mesmo assim):", err?.message ?? err);
   // Não propaga o erro: o build não deve quebrar por causa da migração.
 }
+
+try {
+  console.log("[deploy-migrate] Sincronizando alimentos base (seed)…");
+  execSync("tsx prisma/seed.ts", {
+    stdio: "inherit",
+    env: { ...process.env, DATABASE_URL: directUrl },
+  });
+  console.log("[deploy-migrate] Alimentos base sincronizados.");
+} catch (err) {
+  console.error("[deploy-migrate] Falha ao sincronizar alimentos (build segue mesmo assim):", err?.message ?? err);
+}
