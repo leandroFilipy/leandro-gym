@@ -68,6 +68,20 @@ export function mifflinStJeorBMR(p: {
  * (piso de 0 g). Retorna valores inteiros, prontos para gravar em `NutritionGoal`.
  */
 export function computeNutritionGoal(profile: NutritionProfile): Macros {
+  return computeNutritionGoalBreakdown(profile).goal;
+}
+
+export interface NutritionGoalBreakdown {
+  bmr: number; // TMB (kcal em repouso)
+  tdee: number; // gasto total = TMB × fator de atividade
+  goal: Macros; // meta após ajuste do objetivo
+}
+
+/**
+ * Igual a `computeNutritionGoal`, mas também devolve a TMB e o TDEE intermediários
+ * (para mostrar o cálculo ao usuário no Perfil).
+ */
+export function computeNutritionGoalBreakdown(profile: NutritionProfile): NutritionGoalBreakdown {
   const bmr = mifflinStJeorBMR(profile);
   const tdee = bmr * ACTIVITY_FACTOR[profile.activityLevel];
   const kcal = Math.max(0, tdee * (1 + GOAL_KCAL_ADJUST[profile.dietGoal]));
@@ -78,10 +92,14 @@ export function computeNutritionGoal(profile: NutritionProfile): Macros {
   const carbs = remainingKcal / 4;
 
   return {
-    kcal: Math.round(kcal),
-    protein: Math.round(protein),
-    carbs: Math.round(carbs),
-    fat: Math.round(fat),
+    bmr: Math.round(bmr),
+    tdee: Math.round(tdee),
+    goal: {
+      kcal: Math.round(kcal),
+      protein: Math.round(protein),
+      carbs: Math.round(carbs),
+      fat: Math.round(fat),
+    },
   };
 }
 

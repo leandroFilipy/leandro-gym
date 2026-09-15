@@ -3,6 +3,7 @@ import { addDays } from "../dates";
 import {
   ageFromBirthDate,
   computeNutritionGoal,
+  computeNutritionGoalBreakdown,
   energyBalance,
   estimateAdaptiveTdee,
   KCAL_PER_KG,
@@ -147,5 +148,42 @@ describe("ageFromBirthDate", () => {
 
   it("ainda não fez aniversário no ano", () => {
     expect(ageFromBirthDate(new Date("1990-12-31"), new Date("2026-06-15"))).toBe(35);
+  });
+});
+
+describe("computeNutritionGoalBreakdown", () => {
+  it("exemplo Mifflin-St Jeor: homem 70kg/180cm/25a → TMB 1705", () => {
+    const b = computeNutritionGoalBreakdown({
+      weightKg: 70,
+      heightCm: 180,
+      ageYears: 25,
+      sex: "MALE",
+      activityLevel: "MODERATE",
+      dietGoal: "MAINTAIN",
+    });
+    // 700 + 1125 − 125 + 5 = 1705
+    expect(b.bmr).toBe(1705);
+    // TDEE = 1705 × 1.55 = 2642.75 → 2643
+    expect(b.tdee).toBe(Math.round(1705 * 1.55));
+  });
+
+  it("o goal do breakdown bate com computeNutritionGoal", () => {
+    const profile = {
+      weightKg: 82,
+      heightCm: 178,
+      ageYears: 31,
+      sex: "MALE" as const,
+      activityLevel: "ACTIVE" as const,
+      dietGoal: "LOSE" as const,
+    };
+    expect(computeNutritionGoalBreakdown(profile).goal).toEqual(computeNutritionGoal(profile));
+  });
+
+  it("nível de atividade maior aumenta o TDEE sobre a mesma TMB", () => {
+    const base = { weightKg: 70, heightCm: 180, ageYears: 25, sex: "MALE" as const, dietGoal: "MAINTAIN" as const };
+    const sed = computeNutritionGoalBreakdown({ ...base, activityLevel: "SEDENTARY" });
+    const act = computeNutritionGoalBreakdown({ ...base, activityLevel: "VERY_ACTIVE" });
+    expect(sed.bmr).toBe(act.bmr); // mesma TMB
+    expect(act.tdee).toBeGreaterThan(sed.tdee); // TDEE maior
   });
 });

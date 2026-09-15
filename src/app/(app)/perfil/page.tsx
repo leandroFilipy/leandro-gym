@@ -3,10 +3,12 @@ import { LogOut } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { AutoGoalPreview } from "@/features/profile/AutoGoalPreview";
 import { GoalForm } from "@/features/profile/GoalForm";
 import { SettingsForm } from "@/features/profile/SettingsForm";
 import { PushToggle } from "@/features/profile/PushToggle";
 import { fromDbDate, todayIn } from "@/lib/dates";
+import { ageFromBirthDate, computeNutritionGoalBreakdown, type NutritionGoalBreakdown } from "@/lib/domain/energy";
 import { logoutAction } from "@/server/actions/auth";
 import { db } from "@/server/db";
 import { getSettings, requireUserId } from "@/server/session";
@@ -17,18 +19,57 @@ export const metadata: Metadata = { title: "Perfil" };
 export default async function ProfilePage() {
   const userId = await requireUserId();
   const settings = await getSettings(userId);
-  const [user, goal] = await Promise.all([
+  const [user, goal, lastWeight] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
     getActiveGoal(userId, todayIn(settings.timezone)),
+    db.bodyWeight.findFirst({ where: { userId }, orderBy: { date: "desc" }, select: { weightKg: true } }),
   ]);
+
+  // Prévia do cálculo automático (TMB → TDEE → meta).
+  const missing: string[] = [];
+  if (settings.heightCm == null) missing.push("altura");
+  if (settings.sex == null) missing.push("sexo");
+  if (settings.birthDate == null) missing.push("data de nascimento");
+  if (!lastWeight) missing.push("peso");
+
+  let breakdown: NutritionGoalBreakdown | null = null;
+  if (missing.length === 0 && lastWeight && settings.heightCm != null && settings.sex != null && settings.birthDate != null) {
+    breakdown = computeNutritionGoalBreakdown({
+      weightKg: lastWeight.weightKg,
+      heightCm: settings.heightCm,
+      ageYears: ageFromBirthDate(settings.birthDate),
+      sex: settings.sex,
+      activityLevel: settings.activityLevel,
+      dietGoal: settings.dietGoal,
+    });
+  }
 
   return (
     <>
       <PageHeader title="Perfil" subtitle={user?.email} />
       <div className="flex flex-col gap-4">
+        {settings.autoNutritionGoal && (
+          <Card>
+            <AutoGoalPreview
+              breakdown={breakdown}
+              weightKg={lastWeight?.weightKg ?? null}
+              activityLevel={settings.activityLevel}
+              dietGoal={settings.dietGoal}
+              missing={missing}
+            />
+          </Card>
+        )}
+
         <Card>
           <CardHeader title="Metas diárias" />
-          <GoalForm goal={goal} />
+          {settings.autoNutritionGoal ? (
+            <p className="text-sm text-muted">
+              As metas estão em <strong className="text-fg">modo automático</strong> e são recalculadas quando você registra um novo peso.
+              Para editar manualmente, desligue &quot;Calcular metas automaticamente&quot; abaixo.
+            </p>
+          ) : (
+            <GoalForm goal={goal} />
+          )}
         </Card>
 
         <Card>
