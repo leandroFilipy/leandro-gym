@@ -1,19 +1,19 @@
 @import "tailwindcss" source("../");
 
-/* Interface escura, tecnológica e minimalista. */
+/* Interface escura, sóbria e minimalista. Sem neon nem efeitos "dashboard". */
 @theme {
-  --color-bg: #05070a;
-  --color-surface: #0c1117;
-  --color-surface-2: #121a22;
-  --color-line: #22303b;
-  --color-fg: #edf7fa;
-  --color-muted: #8ba0aa;
-  --color-faint: #536872;
-  --color-accent: #55e7f0;
-  --color-accent-fg: #021012;
-  --color-success: #47e6a1;
-  --color-warn: #f3c969;
-  --color-danger: #ff7f8f;
+  --color-bg: #0a0a0b;
+  --color-surface: #141416;
+  --color-surface-2: #1c1c1f;
+  --color-line: #2a2a2e;
+  --color-fg: #f4f4f5;
+  --color-muted: #a1a1aa;
+  --color-faint: #6b6b73;
+  --color-accent: #d6f24e;
+  --color-accent-fg: #16180a;
+  --color-success: #6ee7a8;
+  --color-warn: #f0c866;
+  --color-danger: #f4737f;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
@@ -31,29 +31,12 @@ body {
 
 body {
   font-family: var(--font-sans);
-  background-image:
-    radial-gradient(circle at 85% -10%, rgb(85 231 240 / 0.09), transparent 32rem),
-    radial-gradient(circle at -10% 70%, rgb(71 230 161 / 0.05), transparent 28rem);
-  background-attachment: fixed;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
 
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  content: "";
-  background-image:
-    linear-gradient(rgb(85 231 240 / 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(85 231 240 / 0.025) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(to bottom, black, transparent 75%);
-}
-
 ::selection {
-  background: rgb(85 231 240 / 0.25);
+  background: rgb(214 242 78 / 0.25);
   color: var(--color-fg);
 }
 

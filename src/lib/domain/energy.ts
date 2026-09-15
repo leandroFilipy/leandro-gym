@@ -1,8 +1,97 @@
 import { daysBetween } from "../dates";
-import type { DatedValue } from "./types";
+import type { DatedValue, Macros } from "./types";
 
 /** kcal aproximadas por kg de variação de peso corporal. */
 export const KCAL_PER_KG = 7700;
+
+// ───────────────────────────── Meta automática de nutrição ─────────────────────────────
+// Espelham os enums do Prisma (mantidos como literais para o domínio ficar puro).
+
+export type Sex = "MALE" | "FEMALE";
+export type ActivityLevel = "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
+export type DietGoal = "LOSE" | "MAINTAIN" | "GAIN";
+
+/** Multiplicador da TMB para estimar o TDEE por nível de atividade. */
+export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
+  SEDENTARY: 1.2,
+  LIGHT: 1.375,
+  MODERATE: 1.55,
+  ACTIVE: 1.725,
+  VERY_ACTIVE: 1.9,
+};
+
+/** Ajuste calórico sobre o TDEE conforme o objetivo (déficit/manutenção/superávit). */
+export const GOAL_KCAL_ADJUST: Record<DietGoal, number> = {
+  LOSE: -0.2, // ~20% de déficit
+  MAINTAIN: 0,
+  GAIN: 0.1, // ~10% de superávit
+};
+
+/** Proteína alvo (g/kg de peso corporal) por objetivo. */
+const PROTEIN_G_PER_KG: Record<DietGoal, number> = {
+  LOSE: 2.2,
+  MAINTAIN: 1.8,
+  GAIN: 2,
+};
+
+/** Gordura alvo (g/kg de peso corporal). Restante das calorias vai para carboidratos. */
+const FAT_G_PER_KG = 0.9;
+
+export interface NutritionProfile {
+  weightKg: number;
+  heightCm: number;
+  ageYears: number;
+  sex: Sex;
+  activityLevel: ActivityLevel;
+  dietGoal: DietGoal;
+}
+
+/**
+ * Taxa metabólica basal (TMB) pela equação de Mifflin-St Jeor.
+ *   homens:   10·peso + 6.25·altura − 5·idade + 5
+ *   mulheres: 10·peso + 6.25·altura − 5·idade − 161
+ */
+export function mifflinStJeorBMR(p: {
+  weightKg: number;
+  heightCm: number;
+  ageYears: number;
+  sex: Sex;
+}): number {
+  const base = 10 * p.weightKg + 6.25 * p.heightCm - 5 * p.ageYears;
+  return base + (p.sex === "MALE" ? 5 : -161);
+}
+
+/**
+ * Meta diária de nutrição a partir do perfil.
+ * BMR (Mifflin-St Jeor) → TDEE (× fator de atividade) → ajuste por objetivo → macros.
+ * Proteína e gordura são definidas por kg de peso; o restante das calorias vira carboidrato
+ * (piso de 0 g). Retorna valores inteiros, prontos para gravar em `NutritionGoal`.
+ */
+export function computeNutritionGoal(profile: NutritionProfile): Macros {
+  const bmr = mifflinStJeorBMR(profile);
+  const tdee = bmr * ACTIVITY_FACTOR[profile.activityLevel];
+  const kcal = Math.max(0, tdee * (1 + GOAL_KCAL_ADJUST[profile.dietGoal]));
+
+  const protein = PROTEIN_G_PER_KG[profile.dietGoal] * profile.weightKg;
+  const fat = FAT_G_PER_KG * profile.weightKg;
+  const remainingKcal = Math.max(0, kcal - protein * 4 - fat * 9);
+  const carbs = remainingKcal / 4;
+
+  return {
+    kcal: Math.round(kcal),
+    protein: Math.round(protein),
+    carbs: Math.round(carbs),
+    fat: Math.round(fat),
+  };
+}
+
+/** Idade em anos completos a partir da data de nascimento (referência = hoje). */
+export function ageFromBirthDate(birthDate: Date, now: Date = new Date()): number {
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const m = now.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) age--;
+  return age;
+}
 
 export interface EnergyBalance {
   avgIntake: number | null;

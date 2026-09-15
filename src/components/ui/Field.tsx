@@ -10,7 +10,7 @@ const control =
 
 export function Label({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
-    <span className="mb-1.5 flex items-baseline justify-between font-mono text-[11px] uppercase tracking-wider text-muted">
+    <span className="mb-1.5 flex items-baseline justify-between text-sm font-medium text-muted">
       {children}
       {hint && <span className="text-xs text-faint">{hint}</span>}
     </span>

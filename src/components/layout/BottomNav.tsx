@@ -19,7 +19,7 @@ export function BottomNav() {
                 className={cn("relative flex h-15 flex-col items-center justify-center gap-1 text-[10px] font-medium", active ? "text-accent" : "text-faint")}
                 aria-current={active ? "page" : undefined}
               >
-                {active && <span className="absolute top-0 h-px w-8 bg-accent shadow-[0_0_8px_var(--color-accent)]" />}
+                {active && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-accent" />}
                 <Icon className="size-5" strokeWidth={active ? 2.2 : 1.7} />
                 {label}
               </Link>

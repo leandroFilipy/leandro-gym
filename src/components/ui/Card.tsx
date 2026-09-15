@@ -4,17 +4,17 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-2xl border border-line/80 bg-surface/85 p-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.025)] backdrop-blur-sm", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-line bg-surface p-4", className)} {...props} />;
 }
 
 export function CardHeader({ title, action, href }: { title: string; action?: ReactNode; href?: string }) {
-  const label = <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-muted">{title}</h2>;
+  const label = <h2 className="text-sm font-semibold text-muted">{title}</h2>;
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
       {href ? (
-        <Link href={href} className="flex items-center gap-1 hover:text-fg">
+        <Link href={href} className="flex items-center gap-1 text-muted hover:text-fg">
           {label}
-          <ChevronRight className="size-3.5 text-faint" />
+          <ChevronRight className="size-4 text-faint" />
         </Link>
       ) : (
         label
@@ -42,7 +42,7 @@ export function Badge({ className, tone = "neutral", ...props }: ComponentProps<
     warn: "bg-warn/15 text-warn",
     danger: "bg-danger/15 text-danger",
   };
-  return <span className={cn("inline-flex items-center gap-1 rounded-md border border-current/10 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wide", tones[tone], className)} {...props} />;
+  return <span className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium", tones[tone], className)} {...props} />;
 }
 
 export function EmptyState({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {

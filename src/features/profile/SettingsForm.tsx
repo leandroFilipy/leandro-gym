@@ -11,6 +11,12 @@ export interface SettingsValues {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   tdeeKcal: number | null;
+  heightCm: number | null;
+  sex: "MALE" | "FEMALE" | null;
+  birthDate: string | null; // YYYY-MM-DD
+  activityLevel: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
+  dietGoal: "LOSE" | "MAINTAIN" | "GAIN";
+  autoNutritionGoal: boolean;
   timezone: string;
   dailyEmailEnabled: boolean;
   dailyEmailTime: string;
@@ -18,6 +24,20 @@ export interface SettingsValues {
 }
 
 const TIMEZONES = ["America/Sao_Paulo", "America/Manaus", "America/Belem", "America/Fortaleza", "America/Recife", "America/Cuiaba", "America/Rio_Branco", "America/Noronha", "Europe/Lisbon"];
+
+const ACTIVITY_LABEL: Record<SettingsValues["activityLevel"], string> = {
+  SEDENTARY: "Sedentário (pouco ou nenhum exercício)",
+  LIGHT: "Leve (1–3x/semana)",
+  MODERATE: "Moderado (3–5x/semana)",
+  ACTIVE: "Ativo (6–7x/semana)",
+  VERY_ACTIVE: "Muito ativo (intenso / trabalho físico)",
+};
+
+const GOAL_LABEL: Record<SettingsValues["dietGoal"], string> = {
+  LOSE: "Perder gordura (déficit)",
+  MAINTAIN: "Manter o peso",
+  GAIN: "Ganhar massa (superávit)",
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -55,6 +75,41 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           placeholder="Ex.: 2800"
         />
         <p className="-mt-1 text-xs text-muted">Usado só para estimar déficit/superávit. É uma estimativa, não um valor exato.</p>
+      </Section>
+
+      <Section title="Perfil nutricional">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Altura (cm)" name="heightCm" type="number" inputMode="numeric" defaultValue={values.heightCm ?? ""} placeholder="Ex.: 178" />
+          <Field label="Data de nascimento" name="birthDate" type="date" defaultValue={values.birthDate ?? ""} />
+          <SelectField label="Sexo" name="sex" defaultValue={values.sex ?? ""}>
+            <option value="">—</option>
+            <option value="MALE">Masculino</option>
+            <option value="FEMALE">Feminino</option>
+          </SelectField>
+          <SelectField label="Objetivo" name="dietGoal" defaultValue={values.dietGoal}>
+            {(Object.keys(GOAL_LABEL) as SettingsValues["dietGoal"][]).map((g) => (
+              <option key={g} value={g}>
+                {GOAL_LABEL[g]}
+              </option>
+            ))}
+          </SelectField>
+        </div>
+        <SelectField label="Nível de atividade" name="activityLevel" defaultValue={values.activityLevel}>
+          {(Object.keys(ACTIVITY_LABEL) as SettingsValues["activityLevel"][]).map((a) => (
+            <option key={a} value={a}>
+              {ACTIVITY_LABEL[a]}
+            </option>
+          ))}
+        </SelectField>
+        <Toggle
+          label="Calcular minhas metas automaticamente"
+          description="Recalcula calorias, proteína, carboidrato e gordura ao registrar um novo peso"
+          name="autoNutritionGoal"
+          defaultChecked={values.autoNutritionGoal}
+        />
+        <p className="-mt-1 text-xs text-muted">
+          Precisa de altura, sexo e data de nascimento preenchidos. Usa a fórmula de Mifflin-St Jeor com base no seu peso mais recente.
+        </p>
       </Section>
 
       <Section title="Lembretes e relatórios">

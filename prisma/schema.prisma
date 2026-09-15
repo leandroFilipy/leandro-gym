@@ -34,6 +34,27 @@ model User {
   pushSubscriptions PushSubscription[]
 }
 
+enum Sex {
+  MALE
+  FEMALE
+}
+
+// Fator de atividade física (multiplicador da TMB para estimar o TDEE).
+enum ActivityLevel {
+  SEDENTARY // pouco ou nenhum exercício (1.2)
+  LIGHT // exercício leve 1-3x/semana (1.375)
+  MODERATE // exercício moderado 3-5x/semana (1.55)
+  ACTIVE // exercício intenso 6-7x/semana (1.725)
+  VERY_ACTIVE // exercício muito intenso / trabalho físico (1.9)
+}
+
+// Objetivo da dieta (define o ajuste calórico sobre o TDEE).
+enum DietGoal {
+  LOSE // déficit para perder gordura
+  MAINTAIN // manutenção
+  GAIN // superávit para ganhar massa
+}
+
 model UserSettings {
   id     String @id @default(cuid())
   userId String @unique
@@ -50,6 +71,14 @@ model UserSettings {
 
   // Energia (estimativa manual de gasto diário)
   tdeeKcal Int?
+
+  // Perfil nutricional (base do cálculo automático de metas)
+  heightCm           Float?
+  sex                Sex?
+  birthDate          DateTime?     @db.Date
+  activityLevel      ActivityLevel @default(MODERATE)
+  dietGoal           DietGoal      @default(MAINTAIN)
+  autoNutritionGoal  Boolean       @default(false) // recalcula a meta ao registrar peso
 
   // Automações (fase 2)
   dailyEmailEnabled   Boolean @default(false)

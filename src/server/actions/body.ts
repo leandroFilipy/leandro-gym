@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { requireUserId } from "../session";
 import { isValidDateStr, toDbDate } from "@/lib/dates";
+import { recalcAutoNutritionGoal } from "../services/nutrition-goal";
 import { fail, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const weightSchema = z.object({
@@ -22,6 +23,8 @@ export async function saveWeightAction(input: { date: string; weightKg: number }
     create: { userId, date, weightKg: data.weightKg },
     update: { weightKg: data.weightKg },
   });
+  // Se o modo automático estiver ligado, atualiza a meta de macros/calorias com o novo peso.
+  await recalcAutoNutritionGoal(userId);
   refreshApp();
   return ok;
 }

@@ -6,7 +6,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { GoalForm } from "@/features/profile/GoalForm";
 import { SettingsForm } from "@/features/profile/SettingsForm";
 import { PushToggle } from "@/features/profile/PushToggle";
-import { todayIn } from "@/lib/dates";
+import { fromDbDate, todayIn } from "@/lib/dates";
 import { logoutAction } from "@/server/actions/auth";
 import { db } from "@/server/db";
 import { getSettings, requireUserId } from "@/server/session";
@@ -40,6 +40,12 @@ export default async function ProfilePage() {
               soundEnabled: settings.soundEnabled,
               vibrationEnabled: settings.vibrationEnabled,
               tdeeKcal: settings.tdeeKcal,
+              heightCm: settings.heightCm,
+              sex: settings.sex,
+              birthDate: settings.birthDate ? fromDbDate(settings.birthDate) : null,
+              activityLevel: settings.activityLevel,
+              dietGoal: settings.dietGoal,
+              autoNutritionGoal: settings.autoNutritionGoal,
               timezone: settings.timezone,
               dailyEmailEnabled: settings.dailyEmailEnabled,
               dailyEmailTime: settings.dailyEmailTime,
