@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Trophy } from "lucide-react";
 import { Card, CardHeader, Stat } from "@/components/ui/Card";
 import { WeightChangeText } from "@/features/body/WeightChangeText";
 import { WeightQuickForm } from "@/features/body/WeightQuickForm";
@@ -16,12 +17,14 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-bold">
+      <header className="mb-2">
+        <p className="eyebrow">
+          {WEEKDAY_LONG[d.todayInfo.weekday]} · {fmtDayMonth(d.today)}
+        </p>
+        <h1 className="mt-1 text-4xl font-extrabold uppercase italic leading-none">
           {d.greeting}
-          {d.firstName ? `, ${d.firstName}` : ""} 👋
+          {d.firstName ? `, ${d.firstName}` : ""}
         </h1>
-        <p className="text-sm text-muted">{WEEKDAY_LONG[d.todayInfo.weekday]}, {fmtDayMonth(d.today)}</p>
       </header>
 
       <TodayWorkoutCard today={d.todayInfo} />
@@ -66,7 +69,7 @@ export default async function HomePage() {
           <Card className="hover:border-faint">
             <CardHeader title="Último treino" />
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-semibold">{d.lastSession.name}</span>
+              <span className="font-display text-xl font-bold uppercase italic">{d.lastSession.name}</span>
               <span className="text-sm text-muted">{fmtDayMonth(d.lastSession.date)}</span>
             </div>
             <div className="tabular text-sm text-muted">
@@ -82,7 +85,9 @@ export default async function HomePage() {
           <ul className="flex flex-col gap-1.5">
             {d.records.map((r) => (
               <li key={r.id} className="flex justify-between gap-2 text-sm">
-                <span>🔥 {r.exercise.name}</span>
+                <span className="flex items-center gap-1.5">
+                  <Trophy className="size-4 text-accent" /> {r.exercise.name}
+                </span>
                 <span className="tabular font-semibold">{fmtSet(r)}</span>
               </li>
             ))}

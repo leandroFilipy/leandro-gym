@@ -4,17 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Sem conexão · Leandro Gym</title>
-    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="theme-color" content="#0c0c0b" />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0a0a0b;
-        --surface: #141416;
-        --line: #2a2a2e;
-        --fg: #f4f4f5;
-        --muted: #a1a1aa;
-        --accent: #d6f24e;
-        --accent-fg: #16180a;
+        --bg: #0c0c0b;
+        --surface: #161614;
+        --line: #302f2b;
+        --fg: #f3f0e8;
+        --muted: #aaa598;
+        --accent: #ff5b14;
+        --accent-fg: #150600;
       }
       * {
         box-sizing: border-box;
@@ -33,9 +33,7 @@
         justify-content: center;
         padding: 24px;
         text-align: center;
-        background-image:
-          radial-gradient(circle at 85% -10%, rgb(85 231 240 / 0.09), transparent 32rem),
-          radial-gradient(circle at -10% 70%, rgb(71 230 161 / 0.05), transparent 28rem);
+        border-top: 6px solid var(--accent);
       }
       main {
         max-width: 22rem;
@@ -46,15 +44,19 @@
         justify-content: center;
         width: 56px;
         height: 56px;
-        border-radius: 16px;
-        background: var(--surface);
-        border: 1px solid var(--line);
+        background: var(--accent);
+        transform: skewX(-12deg);
         margin-bottom: 20px;
         font-size: 28px;
       }
       h1 {
-        font-size: 1.25rem;
-        margin: 0 0 8px;
+        font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+        font-size: 2rem;
+        font-style: italic;
+        font-weight: 800;
+        text-transform: uppercase;
+        line-height: 1;
+        margin: 0 0 12px;
       }
       p {
         color: var(--muted);
@@ -68,10 +70,12 @@
         cursor: pointer;
         background: var(--accent);
         color: var(--accent-fg);
-        font-weight: 600;
+        font-weight: 700;
         font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
         padding: 12px 20px;
-        border-radius: 12px;
+        border-radius: 3px;
       }
       button:active {
         transform: translateY(1px);

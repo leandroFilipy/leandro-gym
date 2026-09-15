@@ -1,21 +1,32 @@
 @import "tailwindcss" source("../");
 
-/* Interface escura, sóbria e minimalista. Sem neon nem efeitos "dashboard". */
+/* Estética de academia: preto-ferro, laranja de sinalização, tipografia condensada e cantos retos. */
 @theme {
-  --color-bg: #0a0a0b;
-  --color-surface: #141416;
-  --color-surface-2: #1c1c1f;
-  --color-line: #2a2a2e;
-  --color-fg: #f4f4f5;
-  --color-muted: #a1a1aa;
-  --color-faint: #6b6b73;
-  --color-accent: #d6f24e;
-  --color-accent-fg: #16180a;
-  --color-success: #6ee7a8;
-  --color-warn: #f0c866;
-  --color-danger: #f4737f;
+  --color-bg: #0c0c0b;
+  --color-surface: #161614;
+  --color-surface-2: #20201d;
+  --color-line: #302f2b;
+  --color-fg: #f3f0e8;
+  --color-muted: #aaa598;
+  --color-faint: #726e64;
+  --color-accent: #ff5b14;
+  --color-accent-fg: #150600;
+  --color-success: #5fd38d;
+  --color-warn: #ffc233;
+  --color-danger: #ff4757;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Cantos quase retos em todo o app (rounded-full continua redondo) */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 5px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+}
+
+@theme inline {
+  --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), "Arial Narrow", ui-sans-serif, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
 }
 
@@ -35,9 +46,30 @@ body {
   overscroll-behavior-y: none;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
 ::selection {
-  background: rgb(214 242 78 / 0.25);
+  background: rgb(255 91 20 / 0.35);
   color: var(--color-fg);
+}
+
+@utility eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* Faixa zebrada de sinalização (piso de academia) */
+@utility hazard {
+  background-image: repeating-linear-gradient(-45deg, var(--color-accent) 0 8px, transparent 8px 16px);
 }
 
 /* Números grandes com largura fixa (cronômetro, cargas) */

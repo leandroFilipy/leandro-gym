@@ -36,7 +36,7 @@ export function SetLogger({ exercise, draft, onDraft, weightStep, onRemoveSet }:
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-3xl font-bold leading-tight">{exercise.name}</h1>
+        <h1 className="text-4xl font-extrabold uppercase italic leading-none">{exercise.name}</h1>
         <p className="mt-1 text-sm text-muted">
           Meta <span className="font-semibold text-fg">{fmtRepRange(exercise.repMin, exercise.repMax)}</span> · {exercise.plannedSets} séries ·
           descanso {fmtRest(exercise.restSeconds)}
@@ -85,7 +85,7 @@ export function SetLogger({ exercise, draft, onDraft, weightStep, onRemoveSet }:
         </div>
       )}
 
-      <div className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+      <div className="eyebrow text-center text-sm">
         Série {setNumber} {extra ? "(extra)" : `de ${exercise.plannedSets}`}
       </div>
 

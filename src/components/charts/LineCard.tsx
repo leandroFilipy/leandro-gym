@@ -33,7 +33,7 @@ export function LineCard({ title, data, xKey, series, unit = "", height = 200 }:
             <XAxis dataKey={xKey} tick={AXIS} tickLine={false} axisLine={false} minTickGap={16} />
             <YAxis tick={AXIS} tickLine={false} axisLine={false} domain={["auto", "auto"]} width={48} />
             <Tooltip
-              contentStyle={{ background: "var(--color-surface-2)", border: "1px solid var(--color-line)", borderRadius: 12, fontSize: 12 }}
+              contentStyle={{ background: "var(--color-surface-2)", border: "1px solid var(--color-line)", borderRadius: 4, fontSize: 12 }}
               labelStyle={{ color: "var(--color-muted)" }}
               formatter={(v, name) => [`${typeof v === "number" ? v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : v}${unit}`, name]}
             />

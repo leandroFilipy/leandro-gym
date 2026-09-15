@@ -96,3 +96,9 @@
   última versão da rota em cache (sessão de treino) e, na falta, a página offline dedicada.
   Falta: IA com ferramentas que consultam o banco. `npm run typecheck`, `npm run lint`,
   `npm test` e `npm run build` sem erros.
+- 2026-09-15 — Novo design com estética de academia: preto-ferro + laranja de sinalização
+  (`#ff5b14`), Barlow / Barlow Condensed (títulos em caixa alta e itálico), cantos quase retos
+  via tokens `--radius-*`, utilitários `eyebrow` e `hazard`, bottom nav encaixada e marca
+  `components/layout/Wordmark.tsx`. A foto de perfil saiu da interface e ficou só nos ícones
+  (aba, PWA, notificações), recortada com zoom para remover as bordas pretas. E-mail e
+  `offline.html` seguem a nova paleta.

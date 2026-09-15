@@ -6,11 +6,11 @@ import { cn } from "@/lib/cn";
 import { Button } from "./Button";
 
 const control =
-  "w-full rounded-xl border border-line bg-bg/60 px-3 h-11 text-fg placeholder:text-faint outline-none transition focus:border-accent/70 focus:ring-2 focus:ring-accent/10";
+  "w-full rounded-md border border-line bg-surface-2 px-3 h-11 text-fg placeholder:text-faint outline-none transition focus:border-accent";
 
 export function Label({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
-    <span className="mb-1.5 flex items-baseline justify-between text-sm font-medium text-muted">
+    <span className="mb-1.5 flex items-baseline justify-between font-display text-xs font-bold uppercase tracking-[0.12em] text-muted">
       {children}
       {hint && <span className="text-xs text-faint">{hint}</span>}
     </span>
@@ -54,7 +54,7 @@ export function Toggle({ label, description, ...props }: ComponentProps<"input">
         {description && <span className="block text-xs text-muted">{description}</span>}
       </span>
       <input type="checkbox" className="peer sr-only" {...props} />
-      <span className="relative h-7 w-12 shrink-0 rounded-full bg-surface-2 border border-line transition peer-checked:bg-accent after:absolute after:left-0.5 after:top-0.5 after:size-5.5 after:rounded-full after:bg-fg after:transition peer-checked:after:translate-x-5 peer-checked:after:bg-accent-fg" />
+      <span className="relative h-7 w-12 shrink-0 rounded-sm bg-surface-2 border border-line transition peer-checked:bg-accent after:absolute after:left-0.5 after:top-0.5 after:size-5.5 after:rounded-sm after:bg-fg after:transition peer-checked:after:translate-x-5 peer-checked:after:bg-accent-fg" />
     </label>
   );
 }
@@ -70,5 +70,5 @@ export function SubmitButton({ children, ...props }: ComponentProps<typeof Butto
 
 export function FormError({ message }: { message?: string | null }) {
   if (!message) return null;
-  return <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{message}</p>;
+  return <p className="rounded-md border-l-4 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">{message}</p>;
 }

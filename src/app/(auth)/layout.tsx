@@ -1,14 +1,16 @@
+import { Wordmark } from "@/components/layout/Wordmark";
+
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-      <div className="mb-8 flex items-center gap-3">
-        <img src="/icons/icon-192.png" alt="Leandro Gym" className="size-12 rounded-2xl object-cover" />
-        <div>
-          <div className="text-xl font-bold">Leandro Gym</div>
-          <div className="text-sm text-muted">Treino, dieta e evolução</div>
+    <>
+      <div className="hazard fixed inset-x-0 top-0 h-1.5 opacity-80" aria-hidden />
+      <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+        <div className="mb-10">
+          <Wordmark size="lg" />
+          <div className="eyebrow mt-3 text-muted">Treino · Dieta · Evolução</div>
         </div>
-      </div>
-      {children}
-    </main>
+        {children}
+      </main>
+    </>
   );
 }

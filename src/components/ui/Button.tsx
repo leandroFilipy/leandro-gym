@@ -6,17 +6,17 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg" | "xl";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-accent-fg hover:brightness-105 active:brightness-95",
-  secondary: "bg-surface-2 text-fg border border-line hover:border-faint",
+  primary: "bg-accent text-accent-fg shadow-[inset_0_-3px_0_rgb(0_0_0/0.25)] hover:brightness-110 active:brightness-95",
+  secondary: "bg-surface-2 text-fg border border-line hover:border-muted",
   ghost: "text-muted hover:text-fg hover:bg-surface-2",
-  danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25",
+  danger: "bg-danger/15 text-danger border border-danger/40 hover:bg-danger/25",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm rounded-lg gap-1.5",
-  md: "h-11 px-4 text-sm rounded-xl gap-2",
-  lg: "h-14 px-5 text-base rounded-xl gap-2",
-  xl: "h-16 px-6 text-lg rounded-xl gap-2 tracking-wide",
+  sm: "h-9 px-3 text-sm rounded-md gap-1.5",
+  md: "h-11 px-4 text-base rounded-md gap-2",
+  lg: "h-14 px-5 text-lg rounded-md gap-2",
+  xl: "h-16 px-6 text-2xl rounded-md gap-2",
 };
 
 interface StyleProps {
@@ -27,7 +27,7 @@ interface StyleProps {
 
 export function buttonClass({ variant = "primary", size = "md", block }: StyleProps, className?: string) {
   return cn(
-    "inline-flex items-center justify-center font-semibold transition duration-200 select-none",
+    "inline-flex items-center justify-center font-display font-bold uppercase tracking-wider transition duration-150 select-none",
     "disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]",
     variants[variant],
     sizes[size],

@@ -1,11 +1,11 @@
 import "server-only";
 
-const BG = "#09090b";
-const SURFACE = "#131316";
-const LINE = "#26262b";
-const FG = "#fafafa";
-const MUTED = "#a1a1aa";
-const ACCENT = "#22d3ee";
+const BG = "#0c0c0b";
+const SURFACE = "#161614";
+const LINE = "#302f2b";
+const FG = "#f3f0e8";
+const MUTED = "#aaa598";
+const ACCENT = "#ff5b14";
 
 /** Escapa texto para uso seguro dentro de HTML. */
 export function esc(value: string): string {
@@ -26,7 +26,7 @@ export function emailLayout(opts: { title: string; preview?: string; bodyHtml: s
   const cta =
     opts.ctaText && opts.ctaHref
       ? `<tr><td style="padding:8px 24px 28px;">
-           <a href="${esc(opts.ctaHref)}" style="display:inline-block;background:${ACCENT};color:${BG};font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:15px;">${esc(opts.ctaText)}</a>
+           <a href="${esc(opts.ctaHref)}" style="display:inline-block;background:${ACCENT};color:${BG};font-weight:700;text-decoration:none;padding:12px 20px;border-radius:3px;font-size:15px;text-transform:uppercase;letter-spacing:1px;">${esc(opts.ctaText)}</a>
          </td></tr>`
       : "";
 
@@ -39,7 +39,7 @@ export function emailLayout(opts: { title: string; preview?: string; bodyHtml: s
   ${preview}
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:24px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${SURFACE};border:1px solid ${LINE};border-radius:20px;overflow:hidden;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${SURFACE};border:1px solid ${LINE};border-top:4px solid ${ACCENT};border-radius:4px;overflow:hidden;">
         <tr><td style="padding:24px 24px 8px;">
           <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:${ACCENT};font-weight:700;">Leandro Gym 🏋️</div>
           <h1 style="margin:8px 0 0;font-size:22px;line-height:1.2;color:${FG};">${esc(opts.title)}</h1>

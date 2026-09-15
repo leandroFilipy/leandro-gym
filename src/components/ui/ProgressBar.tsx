@@ -21,8 +21,8 @@ export function ProgressBar({ label, value, max, unit = "", className }: Props) 
           {max ? <span className="text-muted"> / {fmtInt(max)}{unit}</span> : <span className="text-muted">{unit}</span>}
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={value} aria-valuemax={max ?? undefined}>
-        <div className={cn("h-full rounded-full transition-all", over ? "bg-warn" : "bg-accent")} style={{ width: `${pct}%` }} />
+      <div className="h-2.5 overflow-hidden bg-surface-2" role="progressbar" aria-valuenow={value} aria-valuemax={max ?? undefined}>
+        <div className={cn("h-full transition-all", over ? "bg-warn" : "bg-accent")} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

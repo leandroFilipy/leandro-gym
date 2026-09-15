@@ -11,7 +11,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">{isLogin ? "Entrar" : "Criar conta"}</h1>
+      <h1 className="text-3xl font-extrabold uppercase italic leading-none">{isLogin ? "Entrar" : "Criar conta"}</h1>
       {!isLogin && <Field label="Nome" name="name" autoComplete="name" required />}
       <Field label="E-mail" name="email" type="email" autoComplete="email" required />
       <Field

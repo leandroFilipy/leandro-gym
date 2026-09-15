@@ -16,7 +16,7 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
     return (
       <Card>
         <Label />
-        <h2 className="mb-1 text-2xl font-bold">Monte sua ficha</h2>
+        <h2 className="mb-2 text-4xl font-extrabold uppercase italic leading-none">Monte sua ficha</h2>
         <p className="mb-4 text-sm text-muted">Crie uma ficha semanal para ver o treino do dia aqui.</p>
         <ButtonLink href="/treino/fichas" size="lg" block>
           Criar ficha
@@ -29,9 +29,9 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
   const hasExercises = Boolean(day && day.exercises.length > 0);
 
   return (
-    <Card className={isRest ? "" : "border-accent/30 bg-gradient-to-br from-accent/10 to-surface"}>
+    <Card className={isRest ? "" : "border-l-4 border-l-accent"}>
       <Label />
-      <h2 className="mb-1 text-3xl font-bold leading-tight">{day?.name ?? "Descanso"}</h2>
+      <h2 className="mb-2 text-5xl font-extrabold uppercase italic leading-none">{day?.name ?? "Descanso"}</h2>
       {day && !isRest && (
         <p className="mb-4 text-sm text-muted">
           {day.exercises.length} exercícios · {day.exercises.reduce((n, e) => n + e.plannedSets, 0)} séries
@@ -57,7 +57,7 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
         </ButtonLink>
       ) : session?.finishedAt ? (
         <div className="flex flex-col gap-2">
-          <p className="rounded-xl bg-success/10 px-3 py-2 text-center text-sm text-success">✅ Treino de hoje concluído</p>
+          <p className="rounded-md bg-success/10 px-3 py-2 text-center font-display font-bold uppercase tracking-wider text-success">✅ Treino de hoje concluído</p>
           <ButtonLink href={`/treino/sessao/${session.id}/resumo`} variant="secondary" block>
             Ver resumo
           </ButtonLink>
@@ -93,5 +93,5 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
 }
 
 function Label() {
-  return <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-accent">Treino de hoje</div>;
+  return <div className="eyebrow mb-2">Treino de hoje</div>;
 }

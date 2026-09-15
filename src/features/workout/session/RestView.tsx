@@ -49,7 +49,7 @@ export function RestView({ rest, sound, vibration, onAdd, onDone }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-between gap-6 py-4">
-      <div className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Descanso</div>
+      <div className="eyebrow text-base">Descanso</div>
 
       <div className="relative flex items-center justify-center">
         <svg width="260" height="260" viewBox="0 0 260 260" className="-rotate-90" aria-hidden>
@@ -61,13 +61,13 @@ export function RestView({ rest, sound, vibration, onAdd, onDone }: Props) {
             fill="none"
             stroke="var(--color-accent)"
             strokeWidth="12"
-            strokeLinecap="round"
+            strokeLinecap="butt"
             strokeDasharray={C}
             strokeDashoffset={C * (1 - progress)}
             style={{ transition: "stroke-dashoffset 250ms linear" }}
           />
         </svg>
-        <div className="tabular absolute text-6xl font-bold" role="timer" aria-live="off">
+        <div className="tabular absolute font-display text-8xl font-bold italic" role="timer" aria-live="off">
           {fmtClock(remaining)}
         </div>
       </div>
@@ -81,11 +81,11 @@ export function RestView({ rest, sound, vibration, onAdd, onDone }: Props) {
         </Button>
       </div>
 
-      <div className="w-full rounded-3xl border border-line bg-surface p-4">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted">Próximo · {rest.next.setLabel}</div>
-        <div className="mt-1 text-xl font-bold">{rest.next.name}</div>
+      <div className="w-full rounded-lg border border-line border-l-4 border-l-accent bg-surface p-4">
+        <div className="font-display text-xs font-bold uppercase tracking-[0.14em] text-muted">Próximo · {rest.next.setLabel}</div>
+        <div className="mt-1 font-display text-2xl font-bold uppercase italic">{rest.next.name}</div>
         <div className="tabular mt-1 text-muted">
-          <span className="text-2xl font-bold text-fg">{fmtNumber(rest.next.weight)}kg</span> · {rest.next.reps} reps · meta {rest.next.range}
+          <span className="font-display text-3xl font-bold text-fg">{fmtNumber(rest.next.weight)}kg</span> · {rest.next.reps} reps · meta {rest.next.range}
         </div>
       </div>
     </div>

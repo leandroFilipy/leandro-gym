@@ -29,10 +29,11 @@ export function Sheet({ open, onClose, title, children }: Props) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" aria-label="Fechar" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose} />
-      <div className="pb-safe relative flex max-h-[90dvh] w-full flex-col rounded-t-2xl border border-line bg-surface/95 shadow-2xl md:max-w-lg md:rounded-2xl">
+      <div className="pb-safe relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-lg border border-line bg-surface shadow-2xl md:max-w-lg md:rounded-lg">
+        <div className="h-1 shrink-0 bg-accent" aria-hidden />
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-          <h2 className="font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} className="rounded-full p-2 text-muted hover:bg-surface-2" aria-label="Fechar">
+          <h2 className="text-xl font-bold uppercase italic">{title}</h2>
+          <button type="button" onClick={onClose} className="rounded-md p-2 text-muted hover:bg-surface-2" aria-label="Fechar">
             <X className="size-5" />
           </button>
         </div>

@@ -149,7 +149,7 @@ export function GymSession({ session, library }: Props) {
           <X className="size-6" />
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-bold uppercase tracking-wider">{session.name}</div>
+          <div className="truncate font-display text-lg font-bold uppercase italic leading-tight">{session.name}</div>
           <div className="text-xs text-muted">
             <Elapsed since={session.startedAt} /> · {allSets.length} séries
             {pending > 0 && (
