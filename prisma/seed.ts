@@ -112,6 +112,39 @@ const FOODS: FoodSeed[] = [
   { name: "Pasta de amendoim integral", servingSize: 20, unit: "G", kcal: 118, protein: 5, carbs: 4, fat: 9.6, sourceName: "Rótulo", sourceUrl: LABEL_URL, imageUrl: img("Peanut butter.jpg") },
   { name: "Castanha-do-pará", servingSize: 30, unit: "G", kcal: 197, protein: 4.3, carbs: 3.5, fat: 19.8, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Brazil nuts.jpg") },
   { name: "Azeite de oliva extravirgem", servingSize: 10, unit: "ML", kcal: 88, protein: 0, carbs: 0, fat: 10, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Olive oil.jpg") },
+
+  // ───────────── Carnes: frango ─────────────
+  { name: "Coxa de frango com pele assada", servingSize: 100, unit: "G", kcal: 215, protein: 27.5, carbs: 0, fat: 11.5, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Roast chicken thigh.jpg") },
+  { name: "Coxa de frango sem pele grelhada", servingSize: 100, unit: "G", kcal: 179, protein: 28.5, carbs: 0, fat: 6.9, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Chicken thigh.jpg") },
+  { name: "Sobrecoxa de frango com pele assada", servingSize: 100, unit: "G", kcal: 233, protein: 25.6, carbs: 0, fat: 14, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Roast chicken thigh.jpg") },
+  { name: "Sobrecoxa de frango sem pele cozida", servingSize: 100, unit: "G", kcal: 185, protein: 26.5, carbs: 0, fat: 8.2, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Chicken thigh.jpg") },
+  { name: "Asa de frango assada", servingSize: 100, unit: "G", kcal: 266, protein: 27.1, carbs: 0, fat: 17, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Roast chicken wings.jpg") },
+  { name: "Peito de frango cozido desfiado", servingSize: 100, unit: "G", kcal: 165, protein: 31, carbs: 0, fat: 3.6, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Shredded chicken.jpg") },
+  { name: "Coração de frango grelhado", servingSize: 100, unit: "G", kcal: 185, protein: 26.4, carbs: 0.1, fat: 8, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Grilled chicken hearts.jpg") },
+  { name: "Fígado de frango cozido", servingSize: 100, unit: "G", kcal: 167, protein: 24.5, carbs: 0.9, fat: 6.5, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Chicken liver.jpg") },
+
+  // ───────────── Carnes: boi ─────────────
+  { name: "Acém bovino assado", servingSize: 100, unit: "G", kcal: 234, protein: 27, carbs: 0, fat: 13.5, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Roast beef.jpg") },
+  { name: "Acém bovino cozido", servingSize: 100, unit: "G", kcal: 215, protein: 27.5, carbs: 0, fat: 11.2, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Beef stew.jpg") },
+  { name: "Fraldinha grelhada", servingSize: 100, unit: "G", kcal: 245, protein: 28.5, carbs: 0, fat: 14, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Flank steak.jpg") },
+  { name: "Cupim assado", servingSize: 100, unit: "G", kcal: 330, protein: 24, carbs: 0, fat: 26, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Beef.jpg") },
+  { name: "Bife de patinho frito no óleo", servingSize: 100, unit: "G", kcal: 258, protein: 32, carbs: 0, fat: 14.5, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Fried beef steak.jpg") },
+  { name: "Bife acebolado (contrafilé)", servingSize: 100, unit: "G", kcal: 271, protein: 27, carbs: 2.5, fat: 16.5, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Steak with onions.jpg") },
+  { name: "Costela bovina no bafo", servingSize: 100, unit: "G", kcal: 340, protein: 27, carbs: 0, fat: 25.5, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Beef ribs.jpg") },
+  { name: "Carne moída refogada com óleo", servingSize: 100, unit: "G", kcal: 241, protein: 26, carbs: 0.9, fat: 15, sourceName: "TBCA", sourceUrl: TBCA_URL, imageUrl: img("Ground beef.jpg") },
+  { name: "Língua bovina cozida", servingSize: 100, unit: "G", kcal: 284, protein: 22, carbs: 0, fat: 21, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Beef tongue.jpg") },
+  { name: "Fígado bovino grelhado", servingSize: 100, unit: "G", kcal: 175, protein: 26.5, carbs: 4.4, fat: 4.7, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Beef liver.jpg") },
+  { name: "Fígado bovino frito com óleo", servingSize: 100, unit: "G", kcal: 217, protein: 26.5, carbs: 6, fat: 9, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Fried liver.jpg") },
+  { name: "Coração bovino grelhado", servingSize: 100, unit: "G", kcal: 179, protein: 28.5, carbs: 0.1, fat: 6.5, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Beef heart.jpg") },
+
+  // ───────────── Carnes: porco ─────────────
+  { name: "Costela suína assada", servingSize: 100, unit: "G", kcal: 361, protein: 27, carbs: 0, fat: 27.8, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Pork ribs.jpg") },
+  { name: "Pernil suíno assado", servingSize: 100, unit: "G", kcal: 232, protein: 30, carbs: 0, fat: 12, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Roast pork.jpg") },
+  { name: "Bisteca suína frita com óleo", servingSize: 100, unit: "G", kcal: 290, protein: 28, carbs: 0, fat: 19.5, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Fried pork chop.jpg") },
+  { name: "Lombo suíno grelhado sem gordura", servingSize: 100, unit: "G", kcal: 195, protein: 32, carbs: 0, fat: 6.8, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Grilled pork loin.jpg") },
+  { name: "Panceta suína frita", servingSize: 100, unit: "G", kcal: 518, protein: 9.3, carbs: 0, fat: 53, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Pork belly.jpg") },
+  { name: "Linguiça suína grelhada", servingSize: 100, unit: "G", kcal: 296, protein: 19, carbs: 1.5, fat: 24, sourceName: "TACO", sourceUrl: TACO_URL, imageUrl: img("Grilled sausage.jpg") },
+  { name: "Fígado suíno grelhado", servingSize: 100, unit: "G", kcal: 165, protein: 26, carbs: 3.8, fat: 4.4, sourceName: "USDA", sourceUrl: USDA_URL, imageUrl: img("Pork liver.jpg") },
 ];
 
 async function seedFoods() {

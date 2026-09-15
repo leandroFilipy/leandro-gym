@@ -8,10 +8,11 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
 import { cn } from "@/lib/cn";
 import { scaleMacros } from "@/lib/domain/nutrition";
+import { compatibleUnits, convertQuantity } from "@/lib/domain/units";
 import { fmtNumber } from "@/lib/format";
 import { MEAL_LABEL, UNIT_LABEL } from "@/lib/labels";
 import { addFoodToMealAction, applyFavoriteAction } from "@/server/actions/diet";
-import type { MealType } from "@/generated/prisma/enums";
+import type { FoodUnit, MealType } from "@/generated/prisma/enums";
 import { MacroLine } from "./MacroLine";
 import type { FavoriteOption, FoodOption } from "./types";
 
@@ -25,16 +26,22 @@ interface Props {
   favorites: FavoriteOption[];
 }
 
-const stepFor = (f: FoodOption) =>
-  f.unit === "UNIT" || f.unit === "PORTION" ? 1 : f.unit === "KG" || f.unit === "L" ? 0.1 : f.servingSize >= 100 ? 10 : 5;
+const stepForUnit = (unit: FoodUnit, servingSize: number) =>
+  unit === "UNIT" || unit === "PORTION" ? 1 : unit === "KG" || unit === "L" ? 0.1 : servingSize >= 100 ? 10 : 5;
 
 export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds, favorites }: Props) {
   const [tab, setTab] = useState<"foods" | "favorites">("foods");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<FoodOption | null>(null);
+  const [unit, setUnit] = useState<FoodUnit>("G");
   const [quantity, setQuantity] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  // Unidades que o usuário pode escolher para o alimento selecionado.
+  const units = useMemo(() => (selected ? compatibleUnits(selected.unit) : []), [selected]);
+  // Quantidade convertida para a unidade base do alimento (para macros e para o servidor).
+  const baseQuantity = selected ? convertQuantity(quantity, unit, selected.unit) : 0;
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -52,13 +59,21 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
 
   const pick = (f: FoodOption) => {
     setSelected(f);
+    setUnit(f.unit);
     setQuantity(f.servingSize);
+  };
+
+  // Troca a unidade preservando a quantidade equivalente (ex.: 1500 g → 1,5 kg).
+  const changeUnit = (next: FoodUnit) => {
+    if (!selected) return;
+    setQuantity(convertQuantity(quantity, unit, next));
+    setUnit(next);
   };
 
   const add = () =>
     selected &&
     start(async () => {
-      const r = await addFoodToMealAction({ date, mealType, foodId: selected.id, quantity });
+      const r = await addFoodToMealAction({ date, mealType, foodId: selected.id, quantity: baseQuantity });
       if (!r.ok) return setError(r.error);
       close();
     });
@@ -84,12 +99,29 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
               {UNIT_LABEL[selected.unit]} = {fmtNumber(selected.kcal)} kcal
             </div>
           </div>
-          <Stepper label="Quantidade" unit={UNIT_LABEL[selected.unit]} value={quantity} step={stepFor(selected)} min={0} decimals={1} onChange={setQuantity} />
+          {units.length > 1 && (
+            <div>
+              <div className="mb-1 text-center font-display text-xs font-bold uppercase tracking-[0.16em] text-muted">Medida</div>
+              <div className="grid grid-flow-col gap-1 rounded-xl bg-surface-2 p-1">
+                {units.map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => changeUnit(u)}
+                    className={cn("h-9 rounded-lg text-sm", u === unit ? "bg-surface font-semibold" : "text-muted")}
+                  >
+                    {UNIT_LABEL[u]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <Stepper label="Quantidade" unit={UNIT_LABEL[unit]} value={quantity} step={stepForUnit(unit, selected.servingSize)} min={0} decimals={unit === "KG" || unit === "L" ? 2 : 1} onChange={setQuantity} />
           <div className="rounded-2xl bg-surface-2 p-3 text-center">
-            <MacroLine m={scaleMacros(selected, quantity)} className="text-sm" />
+            <MacroLine m={scaleMacros(selected, baseQuantity)} className="text-sm" />
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
-          <Button size="lg" block disabled={pending || quantity <= 0} onClick={add}>
+          <Button size="lg" block disabled={pending || baseQuantity <= 0} onClick={add}>
             {pending ? "Adicionando…" : "Adicionar"}
           </Button>
         </div>
