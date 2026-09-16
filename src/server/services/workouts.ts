@@ -46,6 +46,49 @@ export function getDay(userId: string, dayId: string) {
   });
 }
 
+/**
+ * Visão (somente leitura) de um dia da ficha: exercícios com detalhes + a carga/reps do
+ * último treino de cada um (para conferir antes de treinar). Não cria sessão.
+ */
+export async function getDayView(userId: string, dayId: string) {
+  const day = await db.workoutDay.findFirst({
+    where: { id: dayId, plan: { userId } },
+    include: {
+      plan: { select: { id: true, name: true } },
+      exercises: { orderBy: { order: "asc" }, include: { exercise: true } },
+    },
+  });
+  if (!day) return null;
+
+  const exercises = await Promise.all(
+    day.exercises.map(async (e) => {
+      const previous = await getPreviousPerformance(userId, e.exerciseId);
+      const best = previous ? bestSet(previous.sets) : null;
+      return {
+        id: e.id,
+        name: e.exercise.name,
+        muscleGroup: e.exercise.muscleGroup,
+        plannedSets: e.plannedSets,
+        repMin: e.repMin,
+        repMax: e.repMax,
+        restSeconds: e.restSeconds,
+        notes: e.notes ?? e.exercise.notes ?? null,
+        last: previous ? { date: previous.date, weight: best?.weight ?? null, reps: best?.repetitions ?? null } : null,
+      };
+    }),
+  );
+
+  return {
+    id: day.id,
+    name: day.name,
+    type: day.type,
+    weekday: day.weekday,
+    planId: day.plan.id,
+    planName: day.plan.name,
+    exercises,
+  };
+}
+
 // ───────────── Exercícios ─────────────
 
 export function listExercises(userId: string, includeArchived = false) {

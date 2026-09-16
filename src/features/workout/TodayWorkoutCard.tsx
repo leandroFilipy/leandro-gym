@@ -1,10 +1,12 @@
-import { Play } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Play } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { WEEKDAY_LONG } from "@/lib/format";
+import { WEEKDAY_LONG, fmtRest } from "@/lib/format";
+import { MUSCLE_LABEL } from "@/lib/labels";
 import { startFreeSessionAction, startSessionAction } from "@/server/actions/sessions";
 import type { getToday } from "@/server/services/workouts";
-import { TodayExerciseList } from "./TodayExerciseList";
+import { fmtRepRange } from "./format";
 
 type Today = Awaited<ReturnType<typeof getToday>>;
 
@@ -31,25 +33,48 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
   return (
     <Card className={isRest ? "" : "border-l-4 border-l-accent"}>
       <Label />
-      <h2 className="mb-2 text-5xl font-extrabold uppercase italic leading-none">{day?.name ?? "Descanso"}</h2>
+      {day && !isRest ? (
+        <Link href={`/treino/dia/${day.id}`} className="group block">
+          <h2 className="flex items-center gap-1 text-5xl font-extrabold uppercase italic leading-none">
+            {day.name}
+            <ChevronRight className="size-7 text-faint transition group-hover:text-fg" />
+          </h2>
+        </Link>
+      ) : (
+        <h2 className="mb-2 text-5xl font-extrabold uppercase italic leading-none">{day?.name ?? "Descanso"}</h2>
+      )}
       {day && !isRest && (
-        <p className="mb-4 text-sm text-muted">
+        <p className="mb-4 mt-2 text-sm text-muted">
           {day.exercises.length} exercícios · {day.exercises.reduce((n, e) => n + e.plannedSets, 0)} séries
         </p>
       )}
 
       {showExercises && day && hasExercises && (
-        <TodayExerciseList
-          exercises={day.exercises.map((e) => ({
-            id: e.id,
-            name: e.exercise.name,
-            muscleGroup: e.exercise.muscleGroup,
-            plannedSets: e.plannedSets,
-            repMin: e.repMin,
-            repMax: e.repMax,
-            restSeconds: e.restSeconds,
-          }))}
-        />
+        <>
+          <ol className="mb-2 flex flex-col divide-y divide-line rounded-2xl border border-line">
+            {day.exercises.map((e, i) => (
+              <li key={e.id} className="flex items-center gap-3 px-3 py-2.5">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-bold text-muted">{i + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{e.exercise.name}</span>
+                  <span className="text-xs text-muted">
+                    {MUSCLE_LABEL[e.exercise.muscleGroup]} · descanso {fmtRest(e.restSeconds)}
+                  </span>
+                </span>
+                <span className="tabular shrink-0 text-right text-sm">
+                  <span className="font-semibold">{e.plannedSets}×</span> {fmtRepRange(e.repMin, e.repMax)}
+                  <span className="block text-xs text-faint">reps</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <Link
+            href={`/treino/dia/${day.id}`}
+            className="mb-4 flex w-full items-center justify-center gap-1 rounded-xl border border-line bg-surface-2 py-2 text-sm font-medium text-muted hover:text-fg"
+          >
+            Ver treino completo <ChevronRight className="size-4" />
+          </Link>
+        </>
       )}
 
       {session && !session.finishedAt ? (
@@ -70,20 +95,12 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
             {nextDay && ` Próximo treino: ${nextDay.day.name} (${WEEKDAY_LONG[nextDay.day.weekday].toLowerCase()}).`}
           </p>
           {showExercises && nextDay && nextDay.day.exercises.length > 0 && (
-            <div>
-              <div className="eyebrow mb-2">Próximo treino · {nextDay.day.name}</div>
-              <TodayExerciseList
-                exercises={nextDay.day.exercises.map((e) => ({
-                  id: e.id,
-                  name: e.exercise.name,
-                  muscleGroup: e.exercise.muscleGroup,
-                  plannedSets: e.plannedSets,
-                  repMin: e.repMin,
-                  repMax: e.repMax,
-                  restSeconds: e.restSeconds,
-                }))}
-              />
-            </div>
+            <Link
+              href={`/treino/dia/${nextDay.day.id}`}
+              className="flex w-full items-center justify-center gap-1 rounded-xl border border-line bg-surface-2 py-2 text-sm font-medium text-muted hover:text-fg"
+            >
+              Ver próximo treino · {nextDay.day.name} <ChevronRight className="size-4" />
+            </Link>
           )}
           <form action={startFreeSessionAction}>
             <Button type="submit" variant="secondary" block>
