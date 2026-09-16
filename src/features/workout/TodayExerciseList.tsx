@@ -17,7 +17,7 @@ export interface TodayExercise {
   restSeconds: number;
 }
 
-const PREVIEW = 4; // quantos exercícios mostrar antes do "ver mais"
+const PREVIEW = 3; // quantos exercícios mostrar antes do "ver mais"
 
 /** Lista dos exercícios do treino de hoje, colapsada quando há muitos. */
 export function TodayExerciseList({ exercises }: { exercises: TodayExercise[] }) {

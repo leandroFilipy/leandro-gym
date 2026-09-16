@@ -67,8 +67,24 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted">
             Dia de descanso.
-            {nextDay && ` Próximo: ${nextDay.day.name} (${WEEKDAY_LONG[nextDay.day.weekday].toLowerCase()}).`}
+            {nextDay && ` Próximo treino: ${nextDay.day.name} (${WEEKDAY_LONG[nextDay.day.weekday].toLowerCase()}).`}
           </p>
+          {showExercises && nextDay && nextDay.day.exercises.length > 0 && (
+            <div>
+              <div className="eyebrow mb-2">Próximo treino · {nextDay.day.name}</div>
+              <TodayExerciseList
+                exercises={nextDay.day.exercises.map((e) => ({
+                  id: e.id,
+                  name: e.exercise.name,
+                  muscleGroup: e.exercise.muscleGroup,
+                  plannedSets: e.plannedSets,
+                  repMin: e.repMin,
+                  repMax: e.repMax,
+                  restSeconds: e.restSeconds,
+                }))}
+              />
+            </div>
+          )}
           <form action={startFreeSessionAction}>
             <Button type="submit" variant="secondary" block>
               Fazer treino livre

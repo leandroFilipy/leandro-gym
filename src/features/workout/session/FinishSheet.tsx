@@ -22,6 +22,7 @@ export function FinishSheet({ open, onClose, sessionId, setCount, volume, pendin
   const router = useRouter();
   const [busy, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const finish = () =>
     start(async () => {
@@ -35,8 +36,14 @@ export function FinishSheet({ open, onClose, sessionId, setCount, volume, pendin
       router.push(`/treino/sessao/${sessionId}/resumo`);
     });
 
+  const close = () => {
+    setConfirming(false);
+    setError(null);
+    onClose();
+  };
+
   return (
-    <Sheet open={open} onClose={onClose} title="Finalizar treino">
+    <Sheet open={open} onClose={close} title="Finalizar treino">
       <div className="mb-4 grid grid-cols-2 gap-3 text-center">
         <div className="rounded-2xl bg-surface-2 p-3">
           <div className="tabular text-3xl font-bold">{setCount}</div>
@@ -50,21 +57,36 @@ export function FinishSheet({ open, onClose, sessionId, setCount, volume, pendin
       {missing > 0 && <p className="mb-3 text-sm text-warn">Faltam {missing} séries planejadas.</p>}
       {pending > 0 && <p className="mb-3 text-sm text-warn">{pending} série(s) aguardando internet para sincronizar.</p>}
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
-      <div className="flex flex-col gap-2">
-        <Button size="lg" block disabled={busy} onClick={finish}>
-          {busy ? "Salvando…" : "Finalizar treino"}
-        </Button>
-        <Button variant="secondary" size="lg" block onClick={onClose}>
-          Continuar treinando
-        </Button>
-        {setCount === 0 && (
-          <form action={deleteSessionAction.bind(null, sessionId)}>
-            <Button type="submit" variant="ghost" block className="text-danger">
-              Descartar treino
-            </Button>
-          </form>
-        )}
-      </div>
+
+      {confirming ? (
+        <div className="flex flex-col gap-2">
+          <p className="mb-1 text-center text-sm font-medium">
+            Tem certeza que quer finalizar o treino{missing > 0 ? ` com ${missing} série(s) faltando` : ""}?
+          </p>
+          <Button size="lg" block disabled={busy} onClick={finish}>
+            {busy ? "Salvando…" : "Sim, finalizar"}
+          </Button>
+          <Button variant="secondary" size="lg" block disabled={busy} onClick={() => setConfirming(false)}>
+            Voltar
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <Button size="lg" block onClick={() => setConfirming(true)}>
+            Finalizar treino
+          </Button>
+          <Button variant="secondary" size="lg" block onClick={close}>
+            Continuar treinando
+          </Button>
+          {setCount === 0 && (
+            <form action={deleteSessionAction.bind(null, sessionId)}>
+              <Button type="submit" variant="ghost" block className="text-danger">
+                Descartar treino
+              </Button>
+            </form>
+          )}
+        </div>
+      )}
     </Sheet>
   );
 }
