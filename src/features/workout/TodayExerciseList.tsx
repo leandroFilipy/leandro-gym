@@ -17,14 +17,20 @@ export interface TodayExercise {
   restSeconds: number;
 }
 
-const PREVIEW = 3; // quantos exercícios mostrar antes do "ver mais"
+const PREVIEW = 3; // exercícios mostrados antes de expandir
 
-/** Lista dos exercícios do treino de hoje, colapsada quando há muitos. */
+/**
+ * Lista dos exercícios do treino. Sempre mostra um botão "Ver treino completo"
+ * quando há exercícios: expande a lista completa com detalhes (grupo, séries×reps,
+ * descanso) e permite recolher. Com poucos exercícios o botão continua aparecendo,
+ * alternando entre resumo e detalhes.
+ */
 export function TodayExerciseList({ exercises }: { exercises: TodayExercise[] }) {
   const [expanded, setExpanded] = useState(false);
-  const collapsible = exercises.length > PREVIEW;
-  const visible = expanded || !collapsible ? exercises : exercises.slice(0, PREVIEW);
-  const hidden = exercises.length - visible.length;
+  if (exercises.length === 0) return null;
+
+  const visible = expanded ? exercises : exercises.slice(0, PREVIEW);
+  const hiddenCount = exercises.length - visible.length;
 
   return (
     <div className="mb-4">
@@ -46,16 +52,14 @@ export function TodayExerciseList({ exercises }: { exercises: TodayExercise[] })
         ))}
       </ol>
 
-      {collapsible && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-line bg-surface-2 py-2 text-sm font-medium text-muted hover:text-fg"
-        >
-          {expanded ? "Ver menos" : `Ver mais ${hidden} exercício${hidden > 1 ? "s" : ""}`}
-          <ChevronDown className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-line bg-surface-2 py-2 text-sm font-medium text-muted hover:text-fg"
+      >
+        {expanded ? "Ver menos" : hiddenCount > 0 ? `Ver treino completo (+${hiddenCount})` : "Ver detalhes do treino"}
+        <ChevronDown className={`size-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
     </div>
   );
 }
