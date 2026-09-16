@@ -4,7 +4,7 @@
 //   (permite reabrir o treino atual com internet ruim) e, na falta dela,
 //   uma página offline dedicada.
 // - Notificação do fim do descanso e clique para abrir o app.
-const CACHE = "lg-v8";
+const CACHE = "lg-v9";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"];
 

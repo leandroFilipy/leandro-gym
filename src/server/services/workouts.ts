@@ -5,6 +5,7 @@ import { addDays, fromDbDate, isoWeekday, startOfIsoWeek, toDbDate, todayIn, typ
 import { suggestProgression, type ProgressionSuggestion } from "@/lib/domain/progression";
 import { bestSet, totalVolume } from "@/lib/domain/volume";
 import type { MuscleGroup } from "@/generated/prisma/enums";
+import { bestSetsForExercises } from "./records";
 
 // ───────────── Fichas ─────────────
 
@@ -60,10 +61,13 @@ export async function getDayView(userId: string, dayId: string) {
   });
   if (!day) return null;
 
+  const records = await bestSetsForExercises(userId, day.exercises.map((e) => e.exerciseId));
+
   const exercises = await Promise.all(
     day.exercises.map(async (e) => {
       const previous = await getPreviousPerformance(userId, e.exerciseId);
       const best = previous ? bestSet(previous.sets) : null;
+      const pr = records.get(e.exerciseId) ?? null;
       return {
         id: e.id,
         name: e.exercise.name,
@@ -74,6 +78,7 @@ export async function getDayView(userId: string, dayId: string) {
         restSeconds: e.restSeconds,
         notes: e.notes ?? e.exercise.notes ?? null,
         last: previous ? { date: previous.date, weight: best?.weight ?? null, reps: best?.repetitions ?? null } : null,
+        record: pr ? { weight: pr.weight, reps: pr.repetitions, date: fromDbDate(pr.date) } : null,
       };
     }),
   );

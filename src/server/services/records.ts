@@ -79,3 +79,35 @@ export function listRecentRecords(userId: string, take = 5) {
     include: { exercise: { select: { name: true } } },
   });
 }
+
+/**
+ * Recorde (melhor série por 1RM estimado) de cada exercício informado.
+ * Retorna um mapa exerciseId → { weight, repetitions, e1rm, date } para os exercícios
+ * que já têm série registrada. Usado na tela de detalhes do treino.
+ */
+export async function bestSetsForExercises(userId: string, exerciseIds: string[]) {
+  const map = new Map<string, { weight: number; repetitions: number; e1rm: number; date: Date }>();
+  if (exerciseIds.length === 0) return map;
+
+  const sets = await db.exerciseSet.findMany({
+    where: {
+      completed: true,
+      workoutExercise: { exerciseId: { in: exerciseIds }, session: { userId } },
+    },
+    select: {
+      weight: true,
+      repetitions: true,
+      workoutExercise: { select: { exerciseId: true, session: { select: { date: true } } } },
+    },
+  });
+
+  for (const s of sets) {
+    const key = s.workoutExercise.exerciseId;
+    const e1rm = estimate1RM(s.weight, s.repetitions);
+    const cur = map.get(key);
+    if (!cur || e1rm > cur.e1rm) {
+      map.set(key, { weight: s.weight, repetitions: s.repetitions, e1rm, date: s.workoutExercise.session.date });
+    }
+  }
+  return map;
+}

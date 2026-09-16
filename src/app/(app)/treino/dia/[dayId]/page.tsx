@@ -63,6 +63,12 @@ export default async function DayViewPage({ params }: PageProps<"/treino/dia/[da
                     ) : (
                       <div className="mt-1 text-xs text-faint">Sem registro anterior</div>
                     )}
+                    {e.record && (
+                      <div className="mt-1 text-xs font-medium text-warn">
+                        🔥 Recorde: {e.record.weight} kg × {e.record.reps} reps
+                        <span className="font-normal text-faint"> · {fmtDayMonth(e.record.date)}</span>
+                      </div>
+                    )}
                     {e.notes && <div className="mt-1 text-xs text-muted">📝 {e.notes}</div>}
                   </div>
                 </Card>
