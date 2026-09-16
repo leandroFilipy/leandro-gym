@@ -27,7 +27,7 @@ export default async function HomePage() {
         </h1>
       </header>
 
-      <TodayWorkoutCard today={d.todayInfo} />
+      <TodayWorkoutCard today={d.todayInfo} showExercises />
 
       <div className="grid grid-cols-2 gap-3">
         <Link href="/progresso/peso">
