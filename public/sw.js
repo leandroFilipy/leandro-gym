@@ -4,7 +4,7 @@
 //   (permite reabrir o treino atual com internet ruim) e, na falta dela,
 //   uma página offline dedicada.
 // - Notificação do fim do descanso e clique para abrir o app.
-const CACHE = "lg-v5";
+const CACHE = "lg-v6";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png"];
 
@@ -51,6 +51,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
+          // Guarda só uma cópia para uso OFFLINE (não é servida quando há rede).
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
           return res;
@@ -61,6 +62,7 @@ self.addEventListener("fetch", (event) => {
           caches.match(req).then((hit) => hit || caches.match(OFFLINE_URL)),
         ),
     );
+    return;
   }
 });
 
