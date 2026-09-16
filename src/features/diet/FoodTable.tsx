@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge, Card } from "@/components/ui/Card";
 import { Sheet } from "@/components/ui/Sheet";
 import { fmtNumber } from "@/lib/format";
+import { foodMatches } from "@/lib/domain/food-search";
 import { UNIT_LABEL } from "@/lib/labels";
 import { archiveFoodAction } from "@/server/actions/diet";
 import { FoodForm } from "./FoodForm";
@@ -19,7 +20,7 @@ export function FoodTable({ foods }: { foods: FoodOption[] }) {
 
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return t ? foods.filter((f) => f.name.toLowerCase().includes(t)) : foods;
+    return t ? foods.filter((f) => foodMatches(f.name, t)) : foods;
   }, [foods, q]);
 
   return (

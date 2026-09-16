@@ -8,6 +8,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
 import { cn } from "@/lib/cn";
 import { scaleMacros } from "@/lib/domain/nutrition";
+import { foodMatches } from "@/lib/domain/food-search";
 import { decimalsForMeasure, measuresFor, stepForMeasure, toBaseQuantity, type Measure } from "@/lib/domain/units";
 import { fmtNumber } from "@/lib/format";
 import { MEAL_LABEL, UNIT_LABEL } from "@/lib/labels";
@@ -42,7 +43,7 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (term) return foods.filter((f) => f.name.toLowerCase().includes(term)).slice(0, 40);
+    if (term) return foods.filter((f) => foodMatches(f.name, term)).slice(0, 40);
     const frequent = frequentIds.map((id) => foods.find((f) => f.id === id)).filter((f): f is FoodOption => Boolean(f));
     return [...frequent, ...foods.filter((f) => !frequentIds.includes(f.id))];
   }, [foods, frequentIds, q]);
