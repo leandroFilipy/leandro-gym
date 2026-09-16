@@ -8,7 +8,11 @@ export const dynamic = "force-dynamic";
 
 export function GET() {
   return NextResponse.json(
-    { ok: true, ts: new Date().toISOString() },
+    {
+      ok: true,
+      ts: new Date().toISOString(),
+      commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? "dev").slice(0, 7),
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
