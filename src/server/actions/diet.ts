@@ -5,7 +5,10 @@ import { db } from "../db";
 import { getSettings, requireUserId } from "../session";
 import { isValidDateStr, todayIn, toDbDate } from "@/lib/dates";
 import { scaleMacros } from "@/lib/domain/nutrition";
+import { isValidBarcode, normalizeBarcode, offProductToFood, type OffProduct } from "@/lib/domain/barcode";
 import { FoodUnit, MealType } from "@/generated/prisma/enums";
+import type { Food } from "@/generated/prisma/client";
+import type { FoodOption } from "@/features/diet/types";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const dateSchema = z.string().refine(isValidDateStr, "Data inválida");
@@ -124,6 +127,12 @@ const foodSchema = z.object({
     (value) => !value || value.startsWith("data:image/") || /^https?:\/\//i.test(value),
     "Use uma imagem válida ou uma URL iniciada por http",
   ).transform((value) => value || null),
+  barcode: z
+    .string()
+    .optional()
+    .transform((value) => normalizeBarcode(value ?? ""))
+    .refine((value) => !value || isValidBarcode(value), "Código de barras inválido")
+    .transform((value) => value || null),
 });
 
 export async function createFoodAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -144,6 +153,68 @@ export async function updateFoodAction(id: string, _prev: ActionResult | null, f
   if (!r.count) return fail("Só é possível editar alimentos criados por você");
   refreshApp();
   return ok;
+}
+
+// ───────────── Código de barras ─────────────
+
+export type BarcodeLookup = { status: "found"; food: FoodOption; created: boolean } | { status: "not_found"; barcode: string };
+
+const OFF_FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,image_front_url,nutriments";
+
+function toFoodOption(f: Food): FoodOption {
+  return {
+    id: f.id, name: f.name, servingSize: f.servingSize, unit: f.unit,
+    kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat,
+    imageUrl: f.imageUrl, sourceName: f.sourceName, barcode: f.barcode, mine: f.userId !== null,
+  };
+}
+
+/** Busca no Open Food Facts (base aberta e colaborativa). null se não achar ou falhar. */
+async function fetchOpenFoodFacts(barcode: string): Promise<OffProduct | null> {
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${OFF_FIELDS}`, {
+      headers: { "User-Agent": "LeandroGym/0.1 (app pessoal de treino e dieta)" },
+      signal: AbortSignal.timeout(8000),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { status?: number; product?: OffProduct };
+    return json.status === 1 && json.product ? json.product : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Código lido → alimento. Ordem: alimentos do usuário/base com esse código → Open Food Facts
+ * (cria um alimento do usuário com os dados por 100 g/ml) → não encontrado (cadastro manual).
+ */
+export async function lookupBarcodeAction(raw: string): Promise<ActionResult<BarcodeLookup>> {
+  const userId = await requireUserId();
+  const barcode = normalizeBarcode(raw);
+  if (!isValidBarcode(barcode)) return fail("Código de barras inválido");
+
+  const existing = await db.food.findFirst({
+    where: { barcode, archived: false, OR: [{ userId }, { userId: null }] },
+    orderBy: { userId: { sort: "desc", nulls: "last" } }, // prefere o do usuário
+  });
+  if (existing) return { ok: true, data: { status: "found", food: toFoodOption(existing), created: false } };
+
+  const product = await fetchOpenFoodFacts(barcode);
+  const draft = product ? offProductToFood(product) : null;
+  if (!draft) return { ok: true, data: { status: "not_found", barcode } };
+
+  const food = await db.food.create({
+    data: {
+      ...draft,
+      userId,
+      barcode,
+      sourceName: "Open Food Facts",
+      sourceUrl: `https://world.openfoodfacts.org/product/${barcode}`,
+    },
+  });
+  refreshApp();
+  return { ok: true, data: { status: "found", food: toFoodOption(food), created: true } };
 }
 
 export async function archiveFoodAction(id: string): Promise<ActionResult> {

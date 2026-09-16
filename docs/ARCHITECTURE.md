@@ -94,6 +94,8 @@ User 1─* Food (userId nulo = alimento base compartilhado, somente leitura;
 User 1─* Meal 1─* MealFood *─1 Food      (MealFood guarda snapshot dos macros)
 User 1─* FavoriteMeal 1─* FavoriteMealItem *─1 Food
 User 1─* BodyWeight   (um por dia)
+User 1─* BodyMeasurement (um por dia; medidas em cm + % gordura, todas opcionais)
+User 1─* BodyPhoto    (um por dia+pose; data URL grande + miniatura)
 User 1─* NutritionGoal (histórico; vale a mais recente com startDate <= dia)
 User 1─* WeeklyReport (JSON com o resumo da semana)
 User 1─* PushSubscription (uma por dispositivo/navegador inscrito)
@@ -134,6 +136,14 @@ por usuário; o "treino de hoje" é o `WorkoutDay` da ficha ativa com o weekday 
   Sempre exibido como **estimativa**.
 - **TDEE adaptativo** (fase 3): `consumo médio − (Δpeso_tendência × 7700 / dias)`;
   exige ≥ 14 dias com peso e dieta. Função já existe em `lib/domain/energy.ts`.
+- **Platô** (`stagnation.ts`): métrica = melhor 1RM estimado de cada sessão (últimas 8, janela
+  de 120 dias). Sessões desde o último ganho ≥ 0,5%: ≥ 3 → platô; média das últimas 3 < 95% do
+  melhor → regressão. Sugestões: deload −10%, trocar faixa de reps, variação (≥ 5), recuperação.
+- **Volume por músculo** (`muscle-volume.ts`): séries concluídas na semana ISO e séries
+  planejadas na ficha ativa comparadas a `VOLUME_TARGETS` (ex.: peito/costas/quadríceps 10–20).
+- **Código de barras** (`barcode.ts`): valida EAN/UPC pelo dígito verificador e converte o
+  produto do Open Food Facts em alimento por 100 g/ml. Consulta feita no servidor
+  (`lookupBarcodeAction`); o alimento importado vira alimento do usuário com `barcode`.
 
 ## Automações (e-mail, cron e push) — fase 2
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FileText, Scale, Trophy } from "lucide-react";
+import { FileText, Ruler, Scale, Trophy } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BarCard } from "@/components/charts/BarCard";
 import { LineCard } from "@/components/charts/LineCard";
@@ -10,11 +10,14 @@ import { fmtDayMonth, fmtInt } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
 import { requireUserId } from "@/server/session";
 import { getProgress, parseRange, RANGES } from "@/server/services/stats";
+import { getWeeklyMuscleVolume } from "@/server/services/insights";
+import { MuscleVolumeCard } from "@/features/workout/insights/MuscleVolumeCard";
 
 export const metadata: Metadata = { title: "Progresso" };
 
 const LINKS = [
   { href: "/progresso/peso", label: "Peso", icon: Scale },
+  { href: "/progresso/corpo", label: "Corpo", icon: Ruler },
   { href: "/progresso/recordes", label: "Recordes", icon: Trophy },
   { href: "/progresso/relatorio", label: "Relatório", icon: FileText },
 ];
@@ -22,7 +25,7 @@ const LINKS = [
 export default async function ProgressPage({ searchParams }: PageProps<"/progresso">) {
   const userId = await requireUserId();
   const range = parseRange((await searchParams).r);
-  const p = await getProgress(userId, range);
+  const [p, muscleVolume] = await Promise.all([getProgress(userId, range), getWeeklyMuscleVolume(userId)]);
   const s = p.stats;
   const hasData = p.sessionSeries.length + p.weightSeries.length + p.nutritionSeries.length > 0;
 
@@ -30,9 +33,9 @@ export default async function ProgressPage({ searchParams }: PageProps<"/progres
     <>
       <PageHeader title="Progresso" />
       <div className="flex flex-col gap-4">
-        <nav className="grid grid-cols-3 gap-2">
+        <nav className="grid grid-cols-4 gap-2">
           {LINKS.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-3 text-sm text-muted hover:text-fg">
+            <Link key={href} href={href} className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-line bg-surface py-2.5 text-xs text-muted hover:text-fg sm:flex-row sm:gap-2 sm:py-3 sm:text-sm">
               <Icon className="size-4 text-accent" /> {label}
             </Link>
           ))}
@@ -59,6 +62,8 @@ export default async function ProgressPage({ searchParams }: PageProps<"/progres
           <Stat label="Séries" value={fmtInt(s.setCount)} />
           <Stat label="Volume semanal" value={`${fmtInt(s.avgWeeklyVolume)}`} sub="kg (média)" />
         </Card>
+
+        <MuscleVolumeCard rows={muscleVolume.rows} hasPlan={muscleVolume.hasPlan} />
 
         {!hasData ? (
           <EmptyState title="Sem dados no período" text="Registre treinos, peso e dieta para ver os gráficos." />

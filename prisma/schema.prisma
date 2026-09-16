@@ -29,6 +29,8 @@ model User {
   meals           Meal[]
   favoriteMeals   FavoriteMeal[]
   bodyWeights     BodyWeight[]
+  bodyMeasurements BodyMeasurement[]
+  bodyPhotos      BodyPhoto[]
   nutritionGoals  NutritionGoal[]
   weeklyReports   WeeklyReport[]
   pushSubscriptions PushSubscription[]
@@ -277,6 +279,7 @@ model Food {
   imageUrl    String?  @db.Text // URL http(s) ou imagem compactada em data URL
   sourceName  String?  // ex.: TACO / TBCA / rótulo do fabricante
   sourceUrl   String?  @db.Text
+  barcode     String? // EAN/UPC (leitor de código de barras)
   archived    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -284,6 +287,7 @@ model Food {
   favoriteItems FavoriteMealItem[]
 
   @@index([userId, name])
+  @@index([barcode])
 }
 
 enum MealType {
@@ -369,6 +373,46 @@ model BodyWeight {
   createdAt DateTime @default(now())
 
   @@unique([userId, date])
+}
+
+// Medidas corporais em cm (todas opcionais; um registro por dia).
+model BodyMeasurement {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  waist     Float? // cintura (altura do umbigo)
+  hip       Float? // quadril
+  chest     Float? // peitoral
+  arm       Float? // braço contraído
+  thigh     Float? // coxa
+  calf      Float? // panturrilha
+  neck      Float? // pescoço
+  bodyFat   Float? // % de gordura (opcional, se tiver bioimpedância/dobras)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+enum PhotoPose {
+  FRONT
+  SIDE
+  BACK
+}
+
+// Foto de progresso. Imagens compactadas no cliente e salvas como data URL.
+model BodyPhoto {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime  @db.Date
+  pose      PhotoPose
+  imageUrl  String    @db.Text // ~1080px
+  thumbUrl  String    @db.Text // ~240px (galeria)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, date, pose])
+  @@index([userId, date])
 }
 
 model WeeklyReport {

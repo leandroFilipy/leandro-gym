@@ -68,6 +68,12 @@
 - [ ] IA com ferramentas que consultam o banco
 - [x] Testes (Vitest) para `lib/domain`
 
+## Fase 4 — Inteligência de treino e corpo
+- [x] Detecção de platô/regressão por exercício + sugestões (deload, faixa de reps, variação)
+- [x] Volume semanal por músculo × faixa-alvo × ficha ativa
+- [x] Leitor de código de barras (câmera + Open Food Facts)
+- [x] Medidas corporais e fotos de progresso com comparação
+
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
   Registro inicial; os blocos seguintes foram implementados sem atualização deste arquivo.
@@ -102,3 +108,16 @@
   `components/layout/Wordmark.tsx`. A foto de perfil saiu da interface e ficou só nos ícones
   (aba, PWA, notificações), recortada com zoom para remover as bordas pretas. E-mail e
   `offline.html` seguem a nova paleta.
+- 2026-09-16 — Fase 4: (1) `lib/domain/stagnation.ts`: melhor 1RM estimado por sessão; ≥ 3
+  sessões sem ganho de 0,5% = platô, média recente ≥ 5% abaixo do melhor = regressão. Sugere
+  deload −10% (arredondado ao passo), outra faixa de reps, variação (platô ≥ 5) e recuperação.
+  `server/services/insights.ts` → card "Platô detectado" na Home e diagnóstico no histórico do
+  exercício. (2) `lib/domain/muscle-volume.ts`: faixas-alvo de séries/semana por grupo; card na
+  Home e no Progresso com feito (semana ISO) × planejado (ficha ativa). (3) Leitor de código de
+  barras em Dieta → Adicionar: `BarcodeDetector` nativo com fallback `@zxing/browser` (carregado
+  sob demanda) e digitação manual; `lookupBarcodeAction` procura `Food.barcode`, depois o Open
+  Food Facts (cria alimento do usuário por 100 g/ml) e, se não achar, abre o cadastro com o código.
+  (4) `/progresso/corpo`: `BodyMeasurement` (1/dia) com evolução, gráfico e tabela; `BodyPhoto`
+  (1 por dia+pose, data URL 1080px + miniatura 240px, compactadas em `lib/image.ts`) com galeria e
+  comparação antes × depois. Migração `20260916150000_body_progress_and_barcode` validada no banco
+  local; telas conferidas logado com dados de teste. `typecheck`, `lint`, `test` (110) e `build` ok.

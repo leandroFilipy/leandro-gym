@@ -11,13 +11,15 @@ import { fmtDayMonth, fmtInt, fmtNumber } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
 import { requireUserId } from "@/server/session";
 import { getExerciseHistory } from "@/server/services/workouts";
+import { getExerciseStagnation } from "@/server/services/insights";
+import { StagnationDetail } from "@/features/workout/insights/StagnationCard";
 
 export const metadata: Metadata = { title: "Histórico do exercício" };
 
 export default async function ExerciseHistoryPage({ params }: PageProps<"/treino/exercicios/[id]">) {
   const { id } = await params;
   const userId = await requireUserId();
-  const h = await getExerciseHistory(userId, id);
+  const [h, stagnation] = await Promise.all([getExerciseHistory(userId, id), getExerciseStagnation(userId, id)]);
   if (!h) notFound();
 
   const allBest = bestSet(h.sessions.flatMap((s) => s.sets));
@@ -43,6 +45,8 @@ export default async function ExerciseHistoryPage({ params }: PageProps<"/treino
           <Stat label="Carga máx." value={maxWeight !== null ? `${fmtNumber(maxWeight)}kg` : "—"} />
           <Stat label="Treinos" value={h.sessions.length} />
         </Card>
+
+        <StagnationDetail result={stagnation} />
 
         {chartData.length >= 2 && <ExerciseCharts data={chartData} />}
 

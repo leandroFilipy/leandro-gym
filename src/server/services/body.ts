@@ -4,6 +4,7 @@ import { addDays, fromDbDate, toDbDate, type DateStr } from "@/lib/dates";
 import { movingAverage, weeklyComparison } from "@/lib/domain/weight";
 import { estimateAdaptiveTdee, type AdaptiveTdee } from "@/lib/domain/energy";
 import type { DatedValue } from "@/lib/domain/types";
+import type { PhotoPose } from "@/generated/prisma/enums";
 import { getIntakeSeries } from "./nutrition";
 
 export async function getWeightSeries(userId: string, from?: DateStr): Promise<(DatedValue & { id: string })[]> {
@@ -28,6 +29,35 @@ export async function getWeightSummary(userId: string, today: DateStr) {
     chart: series.map((s, i) => ({ date: s.date, peso: s.value, media: Math.round(trend[i].value * 10) / 10 })),
     recent: [...series].reverse().slice(0, 14),
   };
+}
+
+// ───────────── Medidas e fotos ─────────────
+
+export async function getMeasurements(userId: string) {
+  const rows = await db.bodyMeasurement.findMany({
+    where: { userId },
+    orderBy: { date: "asc" },
+    select: { id: true, date: true, waist: true, hip: true, chest: true, arm: true, thigh: true, calf: true, neck: true, bodyFat: true },
+  });
+  return rows.map((r) => ({ ...r, date: fromDbDate(r.date) }));
+}
+
+/** Galeria: só miniaturas (as fotos grandes são carregadas apenas na comparação). */
+export async function listBodyPhotos(userId: string) {
+  const rows = await db.bodyPhoto.findMany({
+    where: { userId },
+    orderBy: [{ date: "desc" }, { pose: "asc" }],
+    select: { id: true, date: true, pose: true, thumbUrl: true },
+  });
+  return rows.map((r) => ({ ...r, date: fromDbDate(r.date) }));
+}
+
+export async function getBodyPhoto(userId: string, date: DateStr, pose: PhotoPose) {
+  const r = await db.bodyPhoto.findFirst({
+    where: { userId, date: toDbDate(date), pose },
+    select: { id: true, date: true, pose: true, imageUrl: true },
+  });
+  return r ? { ...r, date: fromDbDate(r.date) } : null;
 }
 
 /**

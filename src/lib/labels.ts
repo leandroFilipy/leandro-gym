@@ -1,4 +1,5 @@
-import type { DayType, FoodUnit, MealType, MuscleGroup } from "@/generated/prisma/enums";
+import type { DayType, FoodUnit, MealType, MuscleGroup, PhotoPose } from "@/generated/prisma/enums";
+import type { MeasurementField } from "./domain/measurements";
 
 export const MUSCLE_LABEL: Record<MuscleGroup, string> = {
   CHEST: "Peito",
@@ -46,3 +47,45 @@ export const UNIT_LABEL: Record<FoodUnit, string> = {
   UNIT: "un",
   PORTION: "porção",
 };
+
+export const MEASUREMENT_LABEL: Record<MeasurementField, string> = {
+  waist: "Cintura",
+  hip: "Quadril",
+  chest: "Peitoral",
+  arm: "Braço",
+  thigh: "Coxa",
+  calf: "Panturrilha",
+  neck: "Pescoço",
+  bodyFat: "% Gordura",
+};
+
+export const MEASUREMENT_UNIT: Record<MeasurementField, string> = {
+  waist: "cm",
+  hip: "cm",
+  chest: "cm",
+  arm: "cm",
+  thigh: "cm",
+  calf: "cm",
+  neck: "cm",
+  bodyFat: "%",
+};
+
+/** Direção "boa" da mudança (para colorir): menos cintura/gordura, mais braço/peito/coxa. */
+export const MEASUREMENT_GOOD_DIRECTION: Record<MeasurementField, "up" | "down" | null> = {
+  waist: "down",
+  hip: null,
+  chest: "up",
+  arm: "up",
+  thigh: "up",
+  calf: "up",
+  neck: null,
+  bodyFat: "down",
+};
+
+export const POSE_LABEL: Record<PhotoPose, string> = {
+  FRONT: "Frente",
+  SIDE: "Lado",
+  BACK: "Costas",
+};
+
+export const POSES = Object.keys(POSE_LABEL) as PhotoPose[];

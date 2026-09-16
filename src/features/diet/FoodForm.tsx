@@ -1,16 +1,27 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { Field, FormError, SelectField, SubmitButton } from "@/components/ui/Field";
 import { createFoodAction, updateFoodAction } from "@/server/actions/diet";
 import { FoodPhotoField } from "./FoodPhotoField";
 import type { FoodOption } from "./types";
 
-export function FoodForm({ food, onDone }: { food?: FoodOption; onDone?: () => void }) {
+interface Props {
+  food?: FoodOption;
+  defaultBarcode?: string;
+  onDone?: () => void;
+}
+
+export function FoodForm({ food, defaultBarcode, onDone }: Props) {
   const [state, action] = useActionState(food ? updateFoodAction.bind(null, food.id) : createFoodAction, null);
+  // Ref: chama onDone uma vez por envio, mesmo que o pai passe uma função nova a cada render.
+  const onDoneRef = useRef(onDone);
   useEffect(() => {
-    if (state?.ok) onDone?.();
-  }, [state, onDone]);
+    onDoneRef.current = onDone;
+  }, [onDone]);
+  useEffect(() => {
+    if (state?.ok) onDoneRef.current?.();
+  }, [state]);
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -34,6 +45,15 @@ export function FoodForm({ food, onDone }: { food?: FoodOption; onDone?: () => v
         <Field label="Carboidratos (g)" name="carbs" type="number" step="any" inputMode="decimal" defaultValue={food?.carbs} required />
         <Field label="Gorduras (g)" name="fat" type="number" step="any" inputMode="decimal" defaultValue={food?.fat} required />
       </div>
+      <Field
+        label="Código de barras"
+        hint="opcional"
+        name="barcode"
+        inputMode="numeric"
+        autoComplete="off"
+        defaultValue={food?.barcode ?? defaultBarcode ?? ""}
+        placeholder="Para achar o produto lendo a embalagem"
+      />
       <FormError message={state && !state.ok ? state.error : null} />
       <SubmitButton size="lg" block>
         {food ? "Salvar" : "Cadastrar alimento"}

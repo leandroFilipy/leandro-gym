@@ -63,7 +63,7 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
           foods={foods.map((f) => ({
             id: f.id, name: f.name, servingSize: f.servingSize, unit: f.unit,
             kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat,
-            imageUrl: f.imageUrl, sourceName: f.sourceName, mine: f.userId !== null,
+            imageUrl: f.imageUrl, sourceName: f.sourceName, barcode: f.barcode, mine: f.userId !== null,
           }))}
           frequentIds={frequent.map((f) => f.id)}
           favorites={favorites}

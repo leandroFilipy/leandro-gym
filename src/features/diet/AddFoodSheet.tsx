@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ChevronLeft, ImageIcon, Star } from "lucide-react";
+import { ChevronLeft, ImageIcon, ScanBarcode, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
@@ -12,8 +12,10 @@ import { foodMatches } from "@/lib/domain/food-search";
 import { decimalsForMeasure, measuresFor, stepForMeasure, toBaseQuantity, type Measure } from "@/lib/domain/units";
 import { fmtNumber } from "@/lib/format";
 import { MEAL_LABEL, UNIT_LABEL } from "@/lib/labels";
-import { addFoodToMealAction, applyFavoriteAction } from "@/server/actions/diet";
+import { addFoodToMealAction, applyFavoriteAction, lookupBarcodeAction } from "@/server/actions/diet";
 import type { MealType } from "@/generated/prisma/enums";
+import { BarcodeScanner } from "./BarcodeScanner";
+import { FoodForm } from "./FoodForm";
 import { MacroLine } from "./MacroLine";
 import type { FavoriteOption, FoodOption } from "./types";
 
@@ -35,6 +37,10 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
   const [quantity, setQuantity] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // Leitor de código de barras: desligado, câmera aberta ou produto não encontrado (cadastro).
+  const [scan, setScan] = useState<{ mode: "off" } | { mode: "camera" } | { mode: "not_found"; barcode: string }>({ mode: "off" });
+  const [scanNote, setScanNote] = useState<string | null>(null);
+  const [lookingUp, startLookup] = useTransition();
 
   // Medidas disponíveis para o alimento (unidade base + compatíveis + caseiras).
   const measures = useMemo(() => (selected ? measuresFor(selected) : []), [selected]);
@@ -53,8 +59,21 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
     setMeasure(null);
     setQ("");
     setError(null);
+    setScan({ mode: "off" });
+    setScanNote(null);
     onClose();
   };
+
+  const lookup = (barcode: string) =>
+    startLookup(async () => {
+      setError(null);
+      const r = await lookupBarcodeAction(barcode);
+      if (!r.ok) return setError(r.error);
+      if (r.data.status === "not_found") return setScan({ mode: "not_found", barcode });
+      setScan({ mode: "off" });
+      setScanNote(r.data.created ? "Produto importado do Open Food Facts. Confira os valores com o rótulo." : null);
+      pick(r.data.food);
+    });
 
   const pick = (f: FoodOption) => {
     const ms = measuresFor(f);
@@ -92,7 +111,7 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
     <Sheet open={open} onClose={close} title={`Adicionar · ${MEAL_LABEL[mealType]}`}>
       {selected ? (
         <div className="flex flex-col gap-4">
-          <button type="button" onClick={() => setSelected(null)} className="flex items-center gap-1 self-start text-sm text-muted">
+          <button type="button" onClick={() => { setSelected(null); setScanNote(null); }} className="flex items-center gap-1 self-start text-sm text-muted">
             <ChevronLeft className="size-4" /> Voltar
           </button>
           <div>
@@ -102,6 +121,7 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
               {UNIT_LABEL[selected.unit]} = {fmtNumber(selected.kcal)} kcal
             </div>
           </div>
+          {scanNote && <p className="rounded-md border-l-4 border-accent bg-accent/10 px-3 py-2 text-xs text-muted">{scanNote}</p>}
           {measures.length > 1 && measure && (
             <div>
               <div className="mb-1 text-center font-display text-xs font-bold uppercase tracking-[0.16em] text-muted">Medida</div>
@@ -141,6 +161,24 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
             {pending ? "Adicionando…" : "Adicionar"}
           </Button>
         </div>
+      ) : scan.mode === "camera" ? (
+        <div className="flex flex-col gap-3">
+          <button type="button" onClick={() => setScan({ mode: "off" })} className="flex items-center gap-1 self-start text-sm text-muted">
+            <ChevronLeft className="size-4" /> Voltar
+          </button>
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <BarcodeScanner onDetected={lookup} busy={lookingUp} />
+        </div>
+      ) : scan.mode === "not_found" ? (
+        <div className="flex flex-col gap-3">
+          <button type="button" onClick={() => setScan({ mode: "camera" })} className="flex items-center gap-1 self-start text-sm text-muted">
+            <ChevronLeft className="size-4" /> Ler outro código
+          </button>
+          <p className="rounded-md border-l-4 border-warn bg-warn/10 px-3 py-2 text-sm text-muted">
+            Código <span className="tabular text-fg">{scan.barcode}</span> não encontrado. Cadastre com os dados do rótulo — na próxima leitura ele aparece direto.
+          </p>
+          <FoodForm key={scan.barcode} defaultBarcode={scan.barcode} onDone={() => lookup(scan.barcode)} />
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
@@ -159,13 +197,18 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
 
           {tab === "foods" ? (
             <>
-              <input
-                autoFocus
-                placeholder="Buscar alimento…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 outline-none focus:border-accent"
-              />
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  placeholder="Buscar alimento…"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface-2 px-3 outline-none focus:border-accent"
+                />
+                <Button variant="secondary" aria-label="Ler código de barras" onClick={() => { setError(null); setScan({ mode: "camera" }); }}>
+                  <ScanBarcode className="size-5" />
+                </Button>
+              </div>
               <ul className="flex flex-col">
                 {list.map((f) => (
                   <li key={f.id}>

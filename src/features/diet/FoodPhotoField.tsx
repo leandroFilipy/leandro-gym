@@ -3,36 +3,7 @@
 import { useRef, useState } from "react";
 import { Camera, Link2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-
-const MAX_FILE_BYTES = 8 * 1024 * 1024;
-const MAX_SIDE = 720;
-
-function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-}
-
-async function compactImage(file: File) {
-  if (file.size > MAX_FILE_BYTES) throw new Error("Escolha uma foto de até 8 MB");
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const image = await loadImage(objectUrl);
-    const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(image.width * scale));
-    canvas.height = Math.max(1, Math.round(image.height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Não foi possível processar a foto");
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.78);
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
+import { compactImage } from "@/lib/image";
 
 export function FoodPhotoField({ initialValue }: { initialValue?: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null);

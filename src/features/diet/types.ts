@@ -8,6 +8,7 @@ export interface FoodOption extends Macros {
   unit: FoodUnit;
   imageUrl: string | null;
   sourceName: string | null;
+  barcode: string | null;
   mine: boolean;
 }
 
