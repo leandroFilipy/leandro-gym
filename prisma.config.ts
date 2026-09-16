@@ -14,6 +14,8 @@ export default defineConfig({
   },
   datasource: {
     url: directUrl,
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
+    // Só usado pelo `migrate dev`. Na Vercel a variável existe mas está vazia, e string vazia
+    // faz o `migrate deploy` falhar com P1013 — então vazio vira undefined.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL || undefined,
   },
 });
