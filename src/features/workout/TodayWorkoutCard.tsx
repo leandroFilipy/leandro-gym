@@ -1,11 +1,10 @@
 import { Play } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { WEEKDAY_LONG, fmtRest } from "@/lib/format";
-import { MUSCLE_LABEL } from "@/lib/labels";
+import { WEEKDAY_LONG } from "@/lib/format";
 import { startFreeSessionAction, startSessionAction } from "@/server/actions/sessions";
 import type { getToday } from "@/server/services/workouts";
-import { fmtRepRange } from "./format";
+import { TodayExerciseList } from "./TodayExerciseList";
 
 type Today = Awaited<ReturnType<typeof getToday>>;
 
@@ -40,23 +39,17 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
       )}
 
       {showExercises && day && hasExercises && (
-        <ol className="mb-4 flex flex-col divide-y divide-line rounded-2xl border border-line">
-          {day.exercises.map((e, i) => (
-            <li key={e.id} className="flex items-center gap-3 px-3 py-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-bold text-muted">{i + 1}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{e.exercise.name}</span>
-                <span className="text-xs text-muted">
-                  {MUSCLE_LABEL[e.exercise.muscleGroup]} · descanso {fmtRest(e.restSeconds)}
-                </span>
-              </span>
-              <span className="tabular shrink-0 text-right text-sm">
-                <span className="font-semibold">{e.plannedSets}×</span> {fmtRepRange(e.repMin, e.repMax)}
-                <span className="block text-xs text-faint">reps</span>
-              </span>
-            </li>
-          ))}
-        </ol>
+        <TodayExerciseList
+          exercises={day.exercises.map((e) => ({
+            id: e.id,
+            name: e.exercise.name,
+            muscleGroup: e.exercise.muscleGroup,
+            plannedSets: e.plannedSets,
+            repMin: e.repMin,
+            repMax: e.repMax,
+            restSeconds: e.restSeconds,
+          }))}
+        />
       )}
 
       {session && !session.finishedAt ? (
