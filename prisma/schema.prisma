@@ -188,6 +188,8 @@ model WorkoutSession {
   date         DateTime    @db.Date // dia local do treino
   startedAt    DateTime    @default(now())
   finishedAt   DateTime?
+  pausedAt     DateTime? // se preenchido, o treino está pausado desde este instante
+  pausedSeconds Int       @default(0) // total acumulado de tempo pausado
   notes        String?
 
   exercises WorkoutExercise[]

@@ -170,6 +170,8 @@ export async function getGymSession(userId: string, sessionId: string) {
     date: fromDbDate(session.date),
     startedAt: session.startedAt.toISOString(),
     finishedAt: session.finishedAt?.toISOString() ?? null,
+    pausedAt: session.pausedAt?.toISOString() ?? null,
+    pausedSeconds: session.pausedSeconds,
     exercises,
     settings: {
       weightStepKg: settings.weightStepKg,

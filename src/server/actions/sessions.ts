@@ -81,11 +81,46 @@ export async function addExerciseToSessionAction(sessionId: string, exerciseId: 
   return ok;
 }
 
-export async function finishSessionAction(sessionId: string): Promise<ActionResult> {
+/** Pausa o treino em andamento (marca o instante da pausa). */
+export async function pauseSessionAction(sessionId: string): Promise<ActionResult> {
   const userId = await requireUserId();
   const r = await db.workoutSession.updateMany({
+    where: { id: sessionId, userId, finishedAt: null, pausedAt: null },
+    data: { pausedAt: new Date() },
+  });
+  if (!r.count) return fail("Sessão não encontrada ou já pausada");
+  refreshApp();
+  return ok;
+}
+
+/** Retoma o treino: acumula o tempo pausado e limpa o marcador de pausa. */
+export async function resumeSessionAction(sessionId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const session = await db.workoutSession.findFirst({
     where: { id: sessionId, userId, finishedAt: null },
-    data: { finishedAt: new Date() },
+    select: { pausedAt: true, pausedSeconds: true },
+  });
+  if (!session?.pausedAt) return fail("Sessão não está pausada");
+  const extra = Math.max(0, Math.floor((Date.now() - session.pausedAt.getTime()) / 1000));
+  await db.workoutSession.updateMany({
+    where: { id: sessionId, userId },
+    data: { pausedAt: null, pausedSeconds: session.pausedSeconds + extra },
+  });
+  refreshApp();
+  return ok;
+}
+
+export async function finishSessionAction(sessionId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  // Se estava pausada, consolida o tempo de pausa antes de finalizar.
+  const session = await db.workoutSession.findFirst({
+    where: { id: sessionId, userId, finishedAt: null },
+    select: { pausedAt: true, pausedSeconds: true },
+  });
+  const extra = session?.pausedAt ? Math.max(0, Math.floor((Date.now() - session.pausedAt.getTime()) / 1000)) : 0;
+  const r = await db.workoutSession.updateMany({
+    where: { id: sessionId, userId, finishedAt: null },
+    data: { finishedAt: new Date(), pausedAt: null, pausedSeconds: (session?.pausedSeconds ?? 0) + extra },
   });
   if (!r.count) return fail("Sessão não encontrada ou já finalizada");
   refreshApp();

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
-import { CloudOff, Flag, Plus, X } from "lucide-react";
+import { useCallback, useState, useTransition } from "react";
+import { CloudOff, Flag, Pause, Play, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { totalVolume } from "@/lib/domain/volume";
 import { deleteSet, submitSet } from "@/lib/offline/outbox";
-import { addExerciseToSessionAction } from "@/server/actions/sessions";
+import { addExerciseToSessionAction, pauseSessionAction, resumeSessionAction } from "@/server/actions/sessions";
 import type { GymExercise, GymSessionData } from "@/server/services/workouts";
 import { fmtRepRange } from "../format";
 import { ExercisePickerSheet, type LibraryExercise } from "./AddExerciseSheet";
@@ -66,6 +66,23 @@ export function GymSession({ session, library }: Props) {
   const [finishOpen, setFinishOpen] = useState(false);
   const pending = useOutboxPending();
   useWakeLock(true);
+
+  // Pausa: guardamos localmente para a UI reagir na hora; o servidor consolida os segundos.
+  const [pausedAt, setPausedAt] = useState<string | null>(session.pausedAt);
+  const [pausePending, startPause] = useTransition();
+  const paused = pausedAt != null;
+
+  const togglePause = () =>
+    startPause(async () => {
+      if (paused) {
+        const r = await resumeSessionAction(session.id);
+        if (r.ok) setPausedAt(null);
+      } else {
+        const now = new Date().toISOString();
+        const r = await pauseSessionAction(session.id);
+        if (r.ok) setPausedAt(now);
+      }
+    });
 
   // Exercício adicionado no servidor (router.refresh) → incorpora sem perder o estado local.
   const [seenIds, setSeenIds] = useState(() => session.exercises.map((e) => e.id).join());
@@ -151,7 +168,9 @@ export function GymSession({ session, library }: Props) {
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-lg font-bold uppercase italic leading-tight">{session.name}</div>
           <div className="text-xs text-muted">
-            <Elapsed since={session.startedAt} /> · {allSets.length} séries
+            <Elapsed since={session.startedAt} pausedSeconds={session.pausedSeconds} pausedAt={pausedAt} />
+            {" · "}{allSets.length} séries
+            {paused && <span className="ml-2 font-semibold text-warn">⏸ pausado</span>}
             {pending > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 text-warn">
                 <CloudOff className="size-3" /> {pending} pendente(s)
@@ -159,6 +178,9 @@ export function GymSession({ session, library }: Props) {
             )}
           </div>
         </div>
+        <Button variant={paused ? "primary" : "secondary"} size="sm" disabled={pausePending} onClick={togglePause}>
+          {paused ? <><Play className="size-4" /> Retomar</> : <><Pause className="size-4" /> Pausar</>}
+        </Button>
         <Button variant="secondary" size="sm" onClick={() => setFinishOpen(true)}>
           <Flag className="size-4" /> Finalizar
         </Button>
@@ -171,7 +193,20 @@ export function GymSession({ session, library }: Props) {
       )}
 
       <div className="flex flex-1 flex-col pb-40 pt-2">
-        {rest ? (
+        {paused ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+            <div className="grid size-20 place-items-center rounded-full border border-warn/40 bg-warn/10 text-warn">
+              <Pause className="size-9" />
+            </div>
+            <div>
+              <div className="font-display text-xl font-bold uppercase italic">Treino pausado</div>
+              <p className="mt-1 text-sm text-muted">O cronômetro está parado. Retome quando voltar.</p>
+            </div>
+            <Button size="lg" disabled={pausePending} onClick={togglePause}>
+              <Play className="size-5" /> Retomar treino
+            </Button>
+          </div>
+        ) : rest ? (
           <RestView
             rest={rest}
             sound={session.settings.soundEnabled}
@@ -209,7 +244,7 @@ export function GymSession({ session, library }: Props) {
       </div>
 
       {/* Ação principal fixa na zona do polegar */}
-      {!rest && current && (
+      {!rest && !paused && current && (
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-4 pt-3 backdrop-blur">
           <div className="mx-auto max-w-lg pb-3">
             <Button size="xl" block onClick={completeSet}>
