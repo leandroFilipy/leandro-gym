@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
 import { cn } from "@/lib/cn";
+import type { FoodPrefill } from "@/lib/domain/barcode";
 import { scaleMacros } from "@/lib/domain/nutrition";
 import { foodMatches } from "@/lib/domain/food-search";
 import { decimalsForMeasure, measuresFor, stepForMeasure, toBaseQuantity, type Measure } from "@/lib/domain/units";
@@ -39,7 +40,7 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   // Leitor de código de barras: desligado, câmera aberta ou produto não encontrado (cadastro).
-  const [scan, setScan] = useState<{ mode: "off" } | { mode: "camera" } | { mode: "photo" } | { mode: "not_found"; barcode: string }>({ mode: "off" });
+  const [scan, setScan] = useState<{ mode: "off" } | { mode: "camera" } | { mode: "photo" } | { mode: "not_found"; barcode: string; prefill: FoodPrefill | null }>({ mode: "off" });
   const [scanNote, setScanNote] = useState<string | null>(null);
   const [lookingUp, startLookup] = useTransition();
 
@@ -70,7 +71,7 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
       setError(null);
       const r = await lookupBarcodeAction(barcode);
       if (!r.ok) return setError(r.error);
-      if (r.data.status === "not_found") return setScan({ mode: "not_found", barcode });
+      if (r.data.status === "not_found") return setScan({ mode: "not_found", barcode: r.data.barcode, prefill: r.data.prefill });
       setScan({ mode: "off" });
       setScanNote(r.data.created ? "Produto importado do Open Food Facts. Confira os valores com o rótulo." : null);
       pick(r.data.food);
@@ -183,9 +184,14 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
             <ChevronLeft className="size-4" /> Ler outro código
           </button>
           <p className="rounded-md border-l-4 border-warn bg-warn/10 px-3 py-2 text-sm text-muted">
-            Código <span className="tabular text-fg">{scan.barcode}</span> não encontrado. Cadastre com os dados do rótulo — na próxima leitura ele aparece direto.
+            {scan.prefill?.name ? (
+              <>Achei <span className="text-fg">{scan.prefill.name}</span>, mas sem tabela nutricional.</>
+            ) : (
+              <>Código <span className="tabular text-fg">{scan.barcode}</span> não está na base.</>
+            )}{" "}
+            Tire uma foto da tabela nutricional ou preencha com os dados do rótulo — na próxima leitura ele aparece direto.
           </p>
-          <FoodForm key={scan.barcode} defaultBarcode={scan.barcode} onDone={() => lookup(scan.barcode)} />
+          <FoodForm key={scan.barcode} defaultBarcode={scan.barcode} prefill={scan.prefill} onDone={() => lookup(scan.barcode)} />
         </div>
       ) : (
         <div className="flex flex-col gap-3">

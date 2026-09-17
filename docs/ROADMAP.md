@@ -183,3 +183,11 @@
   Obs.: formulário com `useActionState` + `.bind()` e página que chama função de arquivo
   "use server" travava a resposta sem JS — token virou campo escondido e a checagem foi para
   `services/password-reset.ts`.
+- 2026-09-17 — Código de barras e IA mais robustos: (1) `server/ai/gemini.ts` compartilhado tenta
+  `GEMINI_MODEL` e depois `gemini-flash-latest`, `gemini-2.5-flash`, `-lite` quando o modelo
+  não existe/está sobrecarregado/sem cota; erros mostram o status. (2) Produto fora do Open Food
+  Facts: `LabelReader` no cadastro lê a tabela nutricional por foto (`server/ai/label.ts`) e
+  pré-preenche o formulário; se o OFF tem o produto sem nutrientes, o nome/foto já vêm
+  preenchidos (`offProductBasics`). (3) Leitor: câmera 1080p com foco contínuo, lanterna, ITF-14,
+  ZXing com TRY_HARDER, "Foto do código" (decodifica foto) e dica após 7 s sem leitura.
+  UPC-A/EAN-13 com zero à esquerda são tratados como o mesmo código.

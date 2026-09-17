@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidBarcode, normalizeBarcode, offProductToFood } from "./barcode";
+import { barcodeVariants, isValidBarcode, normalizeBarcode, offProductBasics, offProductToFood } from "./barcode";
 
 describe("isValidBarcode", () => {
   it("aceita EAN-13 e EAN-8 com dígito verificador correto", () => {
@@ -55,5 +55,24 @@ describe("offProductToFood", () => {
   it("sem nome ou sem energia: null", () => {
     expect(offProductToFood({ nutriments: { "energy-kcal_100g": 100 } })).toBeNull();
     expect(offProductToFood({ product_name: "X", nutriments: {} })).toBeNull();
+  });
+});
+
+describe("offProductBasics", () => {
+  it("aproveita nome e marca mesmo sem tabela nutricional", () => {
+    expect(offProductBasics({ product_name: "Pão de mel", brands: "Bauducco", quantity: "30 g", nutriments: {} })).toEqual({
+      name: "Pão de mel (Bauducco)",
+      unit: "G",
+      imageUrl: null,
+    });
+    expect(offProductBasics({ nutriments: {} })).toBeNull();
+  });
+});
+
+describe("barcodeVariants", () => {
+  it("UPC-A e EAN-13 com zero à esquerda são o mesmo produto", () => {
+    expect(barcodeVariants("012345678905")).toEqual(["012345678905", "0012345678905"]);
+    expect(barcodeVariants("0012345678905")).toEqual(["0012345678905", "012345678905"]);
+    expect(barcodeVariants("7891000100103")).toEqual(["7891000100103"]);
   });
 });

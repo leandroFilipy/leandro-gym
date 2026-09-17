@@ -5,11 +5,13 @@ import { db } from "../db";
 import { getSettings, requireUserId } from "../session";
 import { isValidDateStr, todayIn, toDbDate } from "@/lib/dates";
 import { scaleMacros } from "@/lib/domain/nutrition";
-import { isValidBarcode, normalizeBarcode, offProductToFood, type OffProduct } from "@/lib/domain/barcode";
+import { barcodeVariants, isValidBarcode, normalizeBarcode, offProductBasics, offProductToFood, type FoodPrefill, type OffProduct } from "@/lib/domain/barcode";
 import { FoodUnit, MealType } from "@/generated/prisma/enums";
 import type { Food } from "@/generated/prisma/client";
 import type { FoodOption } from "@/features/diet/types";
-import { estimatePlate, isPlateAiConfigured, PlateAiError, type PlateEstimate } from "../ai/plate";
+import { AiError, isAiConfigured, parseImageDataUrl } from "../ai/gemini";
+import { readNutritionLabel } from "../ai/label";
+import { estimatePlate, type PlateEstimate } from "../ai/plate";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const dateSchema = z.string().refine(isValidDateStr, "Data inválida");
@@ -184,7 +186,10 @@ export async function updateFoodAction(id: string, _prev: ActionResult | null, f
 
 // ───────────── Código de barras ─────────────
 
-export type BarcodeLookup = { status: "found"; food: FoodOption; created: boolean } | { status: "not_found"; barcode: string };
+export type BarcodeLookup =
+  | { status: "found"; food: FoodOption; created: boolean }
+  /** prefill: nome/foto quando o produto existe no Open Food Facts mas sem tabela nutricional. */
+  | { status: "not_found"; barcode: string; prefill: FoodPrefill | null };
 
 const OFF_FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,image_front_url,nutriments";
 
@@ -198,18 +203,21 @@ function toFoodOption(f: Food): FoodOption {
 
 /** Busca no Open Food Facts (base aberta e colaborativa). null se não achar ou falhar. */
 async function fetchOpenFoodFacts(barcode: string): Promise<OffProduct | null> {
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${OFF_FIELDS}`, {
-      headers: { "User-Agent": "LeandroGym/0.1 (app pessoal de treino e dieta)" },
-      signal: AbortSignal.timeout(8000),
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const json = (await res.json()) as { status?: number; product?: OffProduct };
-    return json.status === 1 && json.product ? json.product : null;
-  } catch {
-    return null;
+  for (const code of barcodeVariants(barcode)) {
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${OFF_FIELDS}`, {
+        headers: { "User-Agent": "LeandroGym/0.1 (app pessoal de treino e dieta)" },
+        signal: AbortSignal.timeout(8000),
+        cache: "no-store",
+      });
+      if (!res.ok) continue;
+      const json = (await res.json()) as { status?: number; product?: OffProduct };
+      if (json.status === 1 && json.product) return json.product;
+    } catch {
+      // rede lenta ou fora do ar: tenta a próxima variação
+    }
   }
+  return null;
 }
 
 /**
@@ -222,14 +230,14 @@ export async function lookupBarcodeAction(raw: string): Promise<ActionResult<Bar
   if (!isValidBarcode(barcode)) return fail("Código de barras inválido");
 
   const existing = await db.food.findFirst({
-    where: { barcode, archived: false, OR: [{ userId }, { userId: null }] },
+    where: { barcode: { in: barcodeVariants(barcode) }, archived: false, OR: [{ userId }, { userId: null }] },
     orderBy: { userId: { sort: "desc", nulls: "last" } }, // prefere o do usuário
   });
   if (existing) return { ok: true, data: { status: "found", food: toFoodOption(existing), created: false } };
 
   const product = await fetchOpenFoodFacts(barcode);
   const draft = product ? offProductToFood(product) : null;
-  if (!draft) return { ok: true, data: { status: "not_found", barcode } };
+  if (!draft) return { ok: true, data: { status: "not_found", barcode, prefill: product ? offProductBasics(product) : null } };
 
   const food = await db.food.create({
     data: {
@@ -247,20 +255,19 @@ export async function lookupBarcodeAction(raw: string): Promise<ActionResult<Bar
 // ───────────── Foto do prato (IA) ─────────────
 
 const PHOTO_SOURCE = "Estimativa por foto (IA)";
-const DATA_URL = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/;
 
 export type PlateItem = PlateEstimate["items"][number];
 
 /** Analisa a foto (data URL já compactada no cliente) e devolve os itens estimados. Não grava nada. */
 export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionResult<{ items: PlateItem[]; note: string }>> {
   await requireUserId();
-  if (!isPlateAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta GEMINI_API_KEY).");
+  if (!isAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta GEMINI_API_KEY).");
   if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
-  const m = DATA_URL.exec(dataUrl);
-  if (!m) return fail("Formato de imagem inválido");
+  const image = parseImageDataUrl(dataUrl);
+  if (!image) return fail("Formato de imagem inválido");
 
   try {
-    const r = await estimatePlate({ mediaType: m[1] as "image/jpeg" | "image/png" | "image/webp", base64: m[2] });
+    const r = await estimatePlate(image);
     if (!r.isFood || r.items.length === 0) return fail("Não encontrei comida nesta foto. Tente enquadrar o prato de cima.");
     const items = r.items
       .filter((i) => i.grams > 0)
@@ -268,7 +275,37 @@ export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionRe
     return { ok: true, data: { items, note: r.note } };
   } catch (e) {
     console.error("[analyzePlatePhotoAction]", e);
-    return fail(e instanceof PlateAiError ? e.message : "Falha ao analisar a foto. Tente de novo.");
+    return fail(e instanceof AiError ? e.message : "Falha ao analisar a foto. Tente de novo.");
+  }
+}
+
+/** Foto da tabela nutricional → valores para pré-preencher o cadastro do alimento. Não grava nada. */
+export async function readNutritionLabelAction(dataUrl: string): Promise<ActionResult<FoodPrefill>> {
+  await requireUserId();
+  if (!isAiConfigured()) return fail("A leitura por foto ainda não foi configurada (falta GEMINI_API_KEY).");
+  if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
+  const image = parseImageDataUrl(dataUrl);
+  if (!image) return fail("Formato de imagem inválido");
+
+  try {
+    const r = await readNutritionLabel(image);
+    if (!r.isLabel || r.servingSize <= 0) return fail("Não consegui ler a tabela nutricional. Tire a foto de perto, reta e com boa luz.");
+    const round1 = (n: number) => Math.round(Math.max(0, n) * 10) / 10;
+    return {
+      ok: true,
+      data: {
+        ...(r.name.trim() ? { name: r.name.trim().slice(0, 80) } : {}),
+        servingSize: round1(r.servingSize),
+        unit: r.unit,
+        kcal: Math.round(Math.max(0, r.kcal)),
+        protein: round1(r.protein),
+        carbs: round1(r.carbs),
+        fat: round1(r.fat),
+      },
+    };
+  } catch (e) {
+    console.error("[readNutritionLabelAction]", e);
+    return fail(e instanceof AiError ? e.message : "Falha ao ler a foto. Tente de novo.");
   }
 }
 
