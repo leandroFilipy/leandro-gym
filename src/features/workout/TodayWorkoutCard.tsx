@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, Play } from "lucide-react";
+import { ArrowLeftRight, ChevronRight, Play } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { WEEKDAY_LONG, fmtRest } from "@/lib/format";
+import { WEEKDAY_LONG, WEEKDAY_SHORT, fmtRest } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
 import { startFreeSessionAction, startSessionAction } from "@/server/actions/sessions";
 import type { getToday } from "@/server/services/workouts";
@@ -29,6 +29,8 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
 
   const isRest = !day || day.type === "REST";
   const hasExercises = Boolean(day && day.exercises.length > 0);
+  // Trocar o treino de hoje por outro dia da ficha (ex.: faltou segunda, faz na terça).
+  const swapDays = session ? [] : plan.days.filter((d) => d.id !== day?.id && d.type !== "REST" && d.exercises.length > 0);
 
   return (
     <Card className={isRest ? "" : "border-l-4 border-l-accent"}>
@@ -121,6 +123,31 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
             <Play className="size-5 fill-current" /> COMEÇAR TREINO
           </Button>
         </form>
+      )}
+
+      {swapDays.length > 0 && (
+        <details className="group mt-3">
+          <summary className="flex cursor-pointer list-none items-center justify-center gap-1 text-sm text-muted hover:text-fg">
+            <ArrowLeftRight className="size-4" /> {isRest ? "Fazer o treino de outro dia" : "Trocar o treino de hoje"}
+          </summary>
+          <p className="mt-2 text-xs text-faint">O treino conta no dia da ficha dele — a semana não fica bagunçada.</p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {swapDays.map((d) => (
+              <li key={d.id}>
+                <form action={startSessionAction.bind(null, d.id)}>
+                  <button type="submit" className="flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left hover:border-accent">
+                    <span className="w-10 shrink-0 text-xs font-bold text-muted">{WEEKDAY_SHORT[d.weekday]}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{d.name}</span>
+                      <span className="block truncate text-xs text-muted">{d.exercises.map((e) => e.exercise.name).join(" · ")}</span>
+                    </span>
+                    <Play className="size-4 shrink-0 text-accent" />
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
     </Card>
   );

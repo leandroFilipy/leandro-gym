@@ -74,6 +74,13 @@
 - [x] Leitor de código de barras (câmera + Open Food Facts)
 - [x] Medidas corporais e fotos de progresso com comparação
 
+## Fase 5 — Social, praticidade e IA na dieta
+- [x] Força relativa (1RM ÷ peso corporal) com nível por exercício
+- [x] Trocar o dia do treino sem bagunçar a semana
+- [x] Compartilhar ficha por link (importar cópia)
+- [x] "O que eu como agora?" — sugestões para fechar a meta do dia
+- [x] Foto do prato com IA (Claude) — estimativa revisável antes de registrar
+
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
   Registro inicial; os blocos seguintes foram implementados sem atualização deste arquivo.
@@ -121,3 +128,20 @@
   (1 por dia+pose, data URL 1080px + miniatura 240px, compactadas em `lib/image.ts`) com galeria e
   comparação antes × depois. Migração `20260916150000_body_progress_and_barcode` validada no banco
   local; telas conferidas logado com dados de teste. `typecheck`, `lint`, `test` (110) e `build` ok.
+- 2026-09-17 — Fase 5: (1) `lib/domain/strength.ts`: nível (Iniciante → Elite) por razão 1RM/peso
+  para supino, agachamento, terra, desenvolvimento, remada, rosca, leg press e elevação pélvica,
+  casados pelo nome do exercício; card no histórico do exercício e badge em Recordes. (2) Trocar
+  dia: "Trocar o treino de hoje" no card de hoje e "Fazer este treino hoje" na tela do dia; o
+  calendário conta a sessão no dia da ficha (`workoutDayId`) e mostra "feito ter". (3)
+  `WorkoutPlan.shareToken` (migração `20260917120000_plan_share_token`) + `/treino/fichas/importar/[token]`;
+  a importação cria uma cópia inativa (ativa se não houver outra) casando exercícios pelo nome.
+  Login/cadastro agora respeitam `callbackUrl` (só caminhos internos, `lib/safe-next.ts`).
+  (4) `lib/domain/meal-suggestions.ts`: até 12 alimentos habituais (60 dias, quantidade mediana),
+  combinações de 1–2 itens para o alvo de uma refeição (`mealTarget`, ~35% da meta do dia),
+  priorizando proteína sem estourar kcal. (5) `server/ai/plate.ts`: Claude (`claude-opus-5`, SDK
+  oficial, saída estruturada com Zod, fallback de recusa no servidor) estima itens/porções da
+  foto; o usuário revisa e cada item vira um alimento arquivado "Estimativa por foto (IA)".
+  Requer `ANTHROPIC_API_KEY`. Validado no banco local com dois usuários (login, força relativa,
+  troca de dia, importação, sugestões); a chamada real à IA não foi testada (sem chave).
+  Obs.: o Postgres local do `prisma dev` (PGlite) falha com consultas em paralelo
+  ("bind message supplies 2 parameters") — limitação só do ambiente local.

@@ -39,6 +39,16 @@ export const MEAL_LABEL: Record<MealType, string> = {
 
 export const MEAL_TYPES = Object.keys(MEAL_LABEL) as MealType[];
 
+/** Refeição mais provável para a hora local (padrão ao registrar "agora"). */
+export function mealTypeForHour(hour: number): MealType {
+  if (hour < 10) return "BREAKFAST";
+  if (hour < 12) return "MORNING_SNACK";
+  if (hour < 15) return "LUNCH";
+  if (hour < 18) return "AFTERNOON_SNACK";
+  if (hour < 22) return "DINNER";
+  return "SUPPER";
+}
+
 export const UNIT_LABEL: Record<FoodUnit, string> = {
   G: "g",
   KG: "kg",

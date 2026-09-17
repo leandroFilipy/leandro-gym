@@ -10,6 +10,7 @@ interface Day {
   name: string;
   status: DayStatus;
   sessionId: string | null;
+  doneOn?: number | null;
 }
 
 const styles: Record<DayStatus, string> = {
@@ -38,7 +39,10 @@ export function WeekCalendar({ days }: { days: Day[] }) {
             <span className={cn("w-10 text-xs font-bold md:w-auto", d.status === "today" ? "text-accent" : "text-muted")}>
               {WEEKDAY_SHORT[d.weekday]}
             </span>
-            <span className={cn("flex-1 truncate text-sm md:text-xs", d.status === "rest" && "text-faint")}>{d.name}</span>
+            <span className={cn("flex-1 truncate text-sm md:text-xs", d.status === "rest" && "text-faint")}>
+              {d.name}
+              {d.doneOn && <span className="text-xs text-muted"> · feito {WEEKDAY_SHORT[d.doneOn].toLowerCase()}</span>}
+            </span>
             <StatusIcon status={d.status} />
           </>
         );

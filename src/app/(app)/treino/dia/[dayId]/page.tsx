@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, Play } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { startSessionAction } from "@/server/actions/sessions";
 import { Card } from "@/components/ui/Card";
 import { fmtDayMonth, fmtRest, WEEKDAY_LONG } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
@@ -75,6 +76,14 @@ export default async function DayViewPage({ params }: PageProps<"/treino/dia/[da
               </li>
             ))}
           </ol>
+        )}
+
+        {day.exercises.length > 0 && (
+          <form action={startSessionAction.bind(null, day.id)}>
+            <Button type="submit" size="lg" block>
+              <Play className="size-5 fill-current" /> Fazer este treino hoje
+            </Button>
+          </form>
         )}
 
         <ButtonLink href={`/treino/fichas/dia/${day.id}`} variant="ghost" block>

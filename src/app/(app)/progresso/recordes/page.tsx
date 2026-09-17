@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardHeader, EmptyState } from "@/components/ui/Card";
+import { Badge, Card, CardHeader, EmptyState } from "@/components/ui/Card";
 import { fmtSet } from "@/features/workout/format";
 import { fromDbDate } from "@/lib/dates";
-import { fmtDayMonth, fmt1 } from "@/lib/format";
+import { fmtDayMonth, fmt1, fmtNumber } from "@/lib/format";
 import { requireUserId } from "@/server/session";
+import { getStrengthContext } from "@/server/services/strength";
 import { listBestPerExercise, listRecentRecords } from "@/server/services/records";
 
 export const metadata: Metadata = { title: "Recordes" };
 
 export default async function RecordsPage() {
   const userId = await requireUserId();
-  const [best, recent] = await Promise.all([listBestPerExercise(userId), listRecentRecords(userId, 10)]);
+  const [best, recent, strength] = await Promise.all([listBestPerExercise(userId), listRecentRecords(userId, 10), getStrengthContext(userId)]);
 
   return (
     <>
@@ -39,19 +40,26 @@ export default async function RecordsPage() {
         ) : (
           <Card className="p-0">
             <ul className="divide-y divide-line">
-              {best.map((b) => (
+              {best.map((b) => {
+                const rel = strength.evaluate(b.name, b.e1rm);
+                return (
                 <li key={b.exerciseId}>
                   <Link href={`/treino/exercicios/${b.exerciseId}`} className="flex items-center justify-between gap-2 px-4 py-3 hover:bg-surface-2">
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">{b.name}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="truncate font-medium">{b.name}</span>
+                        {rel?.level && <Badge tone="accent">{rel.level}</Badge>}
+                      </span>
                       <span className="text-xs text-muted">
                         {fmtDayMonth(fromDbDate(b.date))} · 1RM est. {fmt1(b.e1rm)} kg
+                        {rel && ` · ${fmtNumber(Math.round(rel.ratio * 100) / 100)}× peso`}
                       </span>
                     </span>
                     <span className="tabular shrink-0 text-lg font-bold">{fmtSet(b)}</span>
                   </Link>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </Card>
         )}

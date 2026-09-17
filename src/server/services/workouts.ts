@@ -37,6 +37,34 @@ export function getPlan(userId: string, planId: string) {
   return db.workoutPlan.findFirst({ where: { id: planId, userId }, include: planInclude });
 }
 
+/**
+ * Ficha compartilhada por link. Única leitura fora do escopo do usuário: o token secreto é a
+ * autorização. Expõe só a estrutura do treino — nada de histórico ou dados do dono além do nome.
+ */
+export async function getSharedPlan(token: string) {
+  if (!/^[\w-]{10,40}$/.test(token)) return null;
+  const plan = await db.workoutPlan.findUnique({
+    where: { shareToken: token },
+    select: {
+      name: true,
+      user: { select: { name: true } },
+      days: {
+        orderBy: { weekday: "asc" },
+        select: {
+          weekday: true,
+          name: true,
+          type: true,
+          exercises: {
+            orderBy: { order: "asc" },
+            select: { id: true, plannedSets: true, repMin: true, repMax: true, exercise: { select: { name: true, muscleGroup: true } } },
+          },
+        },
+      },
+    },
+  });
+  return plan ? { name: plan.name, ownerName: plan.user.name, days: plan.days } : null;
+}
+
 export function getDay(userId: string, dayId: string) {
   return db.workoutDay.findFirst({
     where: { id: dayId, plan: { userId } },
@@ -366,14 +394,22 @@ export async function getWeekCalendar(userId: string) {
       date: { gte: toDbDate(monday), lte: toDbDate(addDays(monday, 6)) },
       OR: [{ finishedAt: { not: null } }, { exercises: { some: { sets: { some: { completed: true } } } } }],
     },
-    select: { id: true, date: true, name: true },
+    select: { id: true, date: true, name: true, workoutDayId: true },
   });
+
+  // Treino feito em outro dia (troca de dia) conta no dia da ficha a que pertence.
+  const planDayIds = new Set(plan?.days.map((d) => d.id) ?? []);
+  const sessionFor = (date: DateStr, planDayId: string | null) =>
+    (planDayId ? sessions.find((s) => s.workoutDayId === planDayId) : undefined) ??
+    sessions.find((s) => fromDbDate(s.date) === date && !(s.workoutDayId && planDayIds.has(s.workoutDayId))) ??
+    null;
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(monday, i);
     const weekday = i + 1;
     const planDay = plan?.days.find((d) => d.weekday === weekday) ?? null;
-    const session = sessions.find((s) => fromDbDate(s.date) === date) ?? null;
+    const session = sessionFor(date, planDay?.id ?? null);
+    const doneOn = session && fromDbDate(session.date) !== date ? isoWeekday(fromDbDate(session.date)) : null;
     const isRest = !planDay || planDay.type === "REST";
 
     let status: DayStatus;
@@ -390,6 +426,7 @@ export async function getWeekCalendar(userId: string) {
       dayId: planDay?.id ?? null,
       status,
       sessionId: session?.id ?? null,
+      doneOn, // weekday em que o treino foi feito, quando diferente do dia da ficha
     };
   });
 

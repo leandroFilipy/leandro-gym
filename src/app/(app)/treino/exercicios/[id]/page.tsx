@@ -6,7 +6,9 @@ import { ArchiveExerciseButton } from "@/features/workout/exercises/ArchiveExerc
 import { ExerciseCharts } from "@/features/workout/exercises/ExerciseCharts";
 import { ExerciseSheetButton } from "@/features/workout/exercises/ExerciseSheetButton";
 import { fmtSet } from "@/features/workout/format";
-import { bestSet } from "@/lib/domain/volume";
+import { bestSet, estimate1RM } from "@/lib/domain/volume";
+import { getStrengthContext } from "@/server/services/strength";
+import { StrengthCard } from "@/features/workout/insights/StrengthCard";
 import { fmtDayMonth, fmtInt, fmtNumber } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
 import { requireUserId } from "@/server/session";
@@ -19,10 +21,15 @@ export const metadata: Metadata = { title: "Histórico do exercício" };
 export default async function ExerciseHistoryPage({ params }: PageProps<"/treino/exercicios/[id]">) {
   const { id } = await params;
   const userId = await requireUserId();
-  const [h, stagnation] = await Promise.all([getExerciseHistory(userId, id), getExerciseStagnation(userId, id)]);
+  const [h, stagnation, strength] = await Promise.all([
+    getExerciseHistory(userId, id),
+    getExerciseStagnation(userId, id),
+    getStrengthContext(userId),
+  ]);
   if (!h) notFound();
 
   const allBest = bestSet(h.sessions.flatMap((s) => s.sets));
+  const oneRm = allBest ? estimate1RM(allBest.weight, allBest.repetitions) : null;
   const maxWeight = h.sessions.length ? Math.max(...h.sessions.map((s) => s.topWeight)) : null;
   const chartData = [...h.sessions].reverse().map((s) => ({
     date: fmtDayMonth(s.date),
@@ -45,6 +52,8 @@ export default async function ExerciseHistoryPage({ params }: PageProps<"/treino
           <Stat label="Carga máx." value={maxWeight !== null ? `${fmtNumber(maxWeight)}kg` : "—"} />
           <Stat label="Treinos" value={h.sessions.length} />
         </Card>
+
+        <StrengthCard result={oneRm ? strength.evaluate(h.exercise.name, oneRm) : null} oneRm={oneRm} bodyWeightKg={strength.bodyWeightKg} />
 
         <StagnationDetail result={stagnation} />
 

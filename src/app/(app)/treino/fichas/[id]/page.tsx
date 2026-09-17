@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge, Card, CardHeader } from "@/components/ui/Card";
 import { PlanActions } from "@/features/workout/plans/PlanActions";
+import { SharePlan } from "@/features/workout/plans/SharePlan";
 import { cn } from "@/lib/cn";
 import { WEEKDAY_LONG } from "@/lib/format";
 import { DAY_TYPE_LABEL } from "@/lib/labels";
@@ -47,6 +48,11 @@ export default async function PlanPage({ params }: PageProps<"/treino/fichas/[id
         <Card>
           <CardHeader title="Configurações da ficha" />
           <PlanActions planId={plan.id} name={plan.name} active={plan.active} />
+        </Card>
+
+        <Card>
+          <CardHeader title="Compartilhar" />
+          <SharePlan planId={plan.id} name={plan.name} shareToken={plan.shareToken} />
         </Card>
       </div>
     </>

@@ -6,11 +6,14 @@ import { Card } from "@/components/ui/Card";
 import { DietDiary } from "@/features/diet/DietDiary";
 import { EnergyCard } from "@/features/diet/EnergyCard";
 import { GoalBars } from "@/features/diet/GoalBars";
-import { addDays, isValidDateStr, todayIn } from "@/lib/dates";
+import { WhatToEatCard } from "@/features/diet/WhatToEatCard";
+import { addDays, hourIn, isValidDateStr, todayIn } from "@/lib/dates";
 import { energyBalance } from "@/lib/domain/energy";
+import { mealTarget, remainingMacros } from "@/lib/domain/meal-suggestions";
 import { fmtFullDate } from "@/lib/format";
+import { mealTypeForHour } from "@/lib/labels";
 import { getSettings, requireUserId } from "@/server/session";
-import { getDiary, getIntakeSeries, listFavorites, listFoods, listFrequentFoods } from "@/server/services/nutrition";
+import { getDiary, getIntakeSeries, getMealSuggestions, listFavorites, listFoods, listFrequentFoods } from "@/server/services/nutrition";
 
 export const metadata: Metadata = { title: "Dieta" };
 
@@ -31,6 +34,9 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
   ]);
 
   const label = date === today ? "Hoje" : date === addDays(today, -1) ? "Ontem" : fmtFullDate(date);
+  // Sugestões só fazem sentido para hoje e com meta definida.
+  const gap = date === today && diary.goal ? remainingMacros(diary.goal, diary.totals) : null;
+  const whatToEat = gap && diary.goal ? await getMealSuggestions(userId, today, mealTarget(diary.goal, gap)) : null;
 
   return (
     <>
@@ -56,6 +62,17 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
         <Card>
           <GoalBars totals={diary.totals} goal={diary.goal} />
         </Card>
+
+        {gap && whatToEat && gap.kcal >= 80 && (
+          <WhatToEatCard
+            key={whatToEat.suggestions.map((s) => s.items.map((i) => `${i.foodId}:${i.quantity}`).join("+")).join("|")}
+            date={date}
+            gap={gap}
+            suggestions={whatToEat.suggestions}
+            hasHistory={whatToEat.hasHistory}
+            defaultMeal={mealTypeForHour(hourIn(settings.timezone))}
+          />
+        )}
 
         <DietDiary
           date={date}

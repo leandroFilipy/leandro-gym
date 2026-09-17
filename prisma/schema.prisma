@@ -134,6 +134,7 @@ model WorkoutPlan {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   active    Boolean  @default(false) // apenas uma ativa por usuário (garantido na action)
+  shareToken String? @unique // link de compartilhamento (/treino/fichas/importar/[token]); null = não compartilhada
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

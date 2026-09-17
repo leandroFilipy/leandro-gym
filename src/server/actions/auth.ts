@@ -6,6 +6,7 @@ import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 import { db } from "../db";
 import { todayIn, toDbDate } from "@/lib/dates";
+import { safeNextPath } from "@/lib/safe-next";
 import { fail, formToObject, validate, type ActionResult } from "./_utils";
 
 const registerSchema = z.object({
@@ -35,18 +36,18 @@ export async function registerAction(_prev: ActionResult | null, fd: FormData): 
     },
   });
 
-  return loginWith(data.email, data.password);
+  return loginWith(data.email, data.password, safeNextPath(fd.get("next")));
 }
 
 export async function loginAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const email = String(fd.get("email") ?? "");
   const password = String(fd.get("password") ?? "");
-  return loginWith(email, password);
+  return loginWith(email, password, safeNextPath(fd.get("next")));
 }
 
-async function loginWith(email: string, password: string): Promise<ActionResult> {
+async function loginWith(email: string, password: string, redirectTo: string): Promise<ActionResult> {
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
+    await signIn("credentials", { email, password, redirectTo });
     return { ok: true };
   } catch (e) {
     if (e instanceof AuthError) return fail("E-mail ou senha incorretos");

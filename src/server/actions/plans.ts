@@ -1,5 +1,7 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "../db";
 import { getSettings, requireUserId } from "../session";
@@ -56,6 +58,85 @@ export async function deletePlanAction(planId: string): Promise<ActionResult> {
   await db.workoutPlan.deleteMany({ where: { id: planId, userId } });
   refreshApp();
   return ok;
+}
+
+// ───────────── Compartilhar ─────────────
+
+/** Gera (ou reaproveita) o link de compartilhamento da ficha. */
+export async function sharePlanAction(planId: string): Promise<ActionResult<{ token: string }>> {
+  const userId = await requireUserId();
+  const plan = await db.workoutPlan.findFirst({ where: { id: planId, userId }, select: { shareToken: true } });
+  if (!plan) return fail("Ficha não encontrada");
+  if (plan.shareToken) return { ok: true, data: { token: plan.shareToken } };
+
+  const token = randomBytes(12).toString("base64url");
+  await db.workoutPlan.updateMany({ where: { id: planId, userId }, data: { shareToken: token } });
+  refreshApp();
+  return { ok: true, data: { token } };
+}
+
+/** Desativa o link: quem tiver o endereço antigo não consegue mais importar. */
+export async function unsharePlanAction(planId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  await db.workoutPlan.updateMany({ where: { id: planId, userId }, data: { shareToken: null } });
+  refreshApp();
+  return ok;
+}
+
+/**
+ * Copia a ficha compartilhada para o usuário logado. Exercícios são casados pelo nome na
+ * biblioteca dele (criados se não existirem); a cópia entra inativa se ele já tiver ficha ativa.
+ */
+export async function importSharedPlanAction(token: string) {
+  const userId = await requireUserId();
+  const source = await db.workoutPlan.findUnique({
+    where: { shareToken: token },
+    include: { days: { include: { exercises: { orderBy: { order: "asc" }, include: { exercise: true } } } } },
+  });
+  if (!source) redirect("/treino/fichas");
+
+  const sourceExercises = [...new Map(source.days.flatMap((d) => d.exercises.map((e) => [e.exercise.name, e.exercise]))).values()];
+  const planId = await db.$transaction(async (tx) => {
+    const existing = await tx.exercise.findMany({ where: { userId, name: { in: sourceExercises.map((e) => e.name) } } });
+    const idByName = new Map(existing.map((e) => [e.name, e.id]));
+    for (const e of sourceExercises) {
+      if (idByName.has(e.name)) continue;
+      const created = await tx.exercise.create({ data: { userId, name: e.name, muscleGroup: e.muscleGroup, notes: e.notes } });
+      idByName.set(e.name, created.id);
+    }
+    // Um exercício arquivado com o mesmo nome volta para a biblioteca.
+    await tx.exercise.updateMany({ where: { userId, id: { in: [...idByName.values()] }, archived: true }, data: { archived: false } });
+
+    const hasActive = await tx.workoutPlan.count({ where: { userId, active: true } });
+    const plan = await tx.workoutPlan.create({
+      data: {
+        userId,
+        name: source.name.slice(0, 60),
+        active: hasActive === 0,
+        days: {
+          create: source.days.map((d) => ({
+            weekday: d.weekday,
+            name: d.name,
+            type: d.type,
+            exercises: {
+              create: d.exercises.map((e) => ({
+                exerciseId: idByName.get(e.exercise.name)!,
+                order: e.order,
+                plannedSets: e.plannedSets,
+                repMin: e.repMin,
+                repMax: e.repMax,
+                restSeconds: e.restSeconds,
+                notes: e.notes,
+              })),
+            },
+          })),
+        },
+      },
+    });
+    return plan.id;
+  });
+  refreshApp();
+  redirect(`/treino/fichas/${planId}`);
 }
 
 // ───────────── Dia ─────────────

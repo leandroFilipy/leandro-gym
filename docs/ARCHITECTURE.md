@@ -169,6 +169,15 @@ faz `pushManager.subscribe` e registra a inscrição em `POST /api/push` (upsert
 O `sw.js` trata o evento `push` mostrando a notificação e navega para `data.url` no clique.
 Sem as chaves VAPID, a UI informa que o recurso não está configurado.
 
+## Fase 5 — compartilhamento e IA na dieta
+
+- **Ficha por link.** `WorkoutPlan.shareToken` (aleatório, 16 caracteres). `getSharedPlan(token)`
+  é a **única leitura fora do escopo do usuário**: o token é a autorização e só a estrutura do
+  treino é exposta. Desativar o link = `shareToken` null.
+- **Foto do prato.** `server/ai/plate.ts` usa o SDK `@anthropic-ai/sdk` (`claude-opus-5`, saída
+  estruturada via `betaZodOutputFormat`, `fallbacks: "default"`). A foto é compactada no cliente
+  (1024px) e não é salva. Nada é registrado sem confirmação do usuário.
+
 ## Segurança
 
 - `proxy.ts` redireciona não autenticados para `/login` (checagem otimista).

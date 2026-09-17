@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "../db";
 import { addDays, fromDbDate, toDbDate, type DateStr } from "@/lib/dates";
 import { sumMacros } from "@/lib/domain/nutrition";
+import { median, suggestMeals, type SuggestionFood } from "@/lib/domain/meal-suggestions";
 import type { DatedValue, Macros } from "@/lib/domain/types";
 import { MEAL_TYPES } from "@/lib/labels";
 
@@ -94,6 +95,36 @@ export async function listFrequentFoods(userId: string, take = 8) {
   });
   const foods = await db.food.findMany({ where: { id: { in: grouped.map((g) => g.foodId) }, archived: false } });
   return grouped.map((g) => foods.find((f) => f.id === g.foodId)).filter((f) => f !== undefined);
+}
+
+/**
+ * "O que eu como agora?": até 12 alimentos mais registrados nos últimos 60 dias, com a
+ * quantidade habitual, combinados para fechar o que falta da meta.
+ */
+export async function getMealSuggestions(userId: string, today: DateStr, target: Macros) {
+  const rows = await db.mealFood.findMany({
+    where: { meal: { userId, date: { gte: toDbDate(addDays(today, -60)) } }, food: { archived: false } },
+    orderBy: { createdAt: "desc" },
+    take: 1500,
+    select: { quantity: true, food: true },
+  });
+
+  const byFood = new Map<string, { food: (typeof rows)[number]["food"]; quantities: number[] }>();
+  for (const r of rows) {
+    const entry = byFood.get(r.food.id) ?? { food: r.food, quantities: [] };
+    entry.quantities.push(r.quantity);
+    byFood.set(r.food.id, entry);
+  }
+  const foods: SuggestionFood[] = [...byFood.values()]
+    .sort((a, b) => b.quantities.length - a.quantities.length)
+    .slice(0, 12)
+    .map(({ food: f, quantities }) => ({
+      id: f.id, name: f.name, unit: f.unit, servingSize: f.servingSize,
+      kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat,
+      usualQuantity: median(quantities),
+    }));
+
+  return { hasHistory: foods.length > 0, suggestions: suggestMeals(target, foods) };
 }
 
 export async function listFavorites(userId: string) {

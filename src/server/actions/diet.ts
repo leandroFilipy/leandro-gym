@@ -9,6 +9,7 @@ import { isValidBarcode, normalizeBarcode, offProductToFood, type OffProduct } f
 import { FoodUnit, MealType } from "@/generated/prisma/enums";
 import type { Food } from "@/generated/prisma/client";
 import type { FoodOption } from "@/features/diet/types";
+import { estimatePlate, isPlateAiConfigured, type PlateEstimate } from "../ai/plate";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const dateSchema = z.string().refine(isValidDateStr, "Data inválida");
@@ -48,6 +49,32 @@ export async function addFoodToMealAction(input: z.input<typeof addFoodSchema>):
   const meal = await getOrCreateMeal(userId, data.date, data.mealType);
   await db.mealFood.create({
     data: { mealId: meal.id, foodId: food.id, quantity: data.quantity, ...scaleMacros(food, data.quantity) },
+  });
+  refreshApp();
+  return ok;
+}
+
+const addFoodsSchema = z.object({
+  date: dateSchema,
+  mealType: z.enum(MealType),
+  items: z.array(z.object({ foodId: z.string().min(1), quantity: quantitySchema })).min(1).max(20),
+});
+
+/** Registra vários alimentos de uma vez (sugestões e foto do prato). */
+export async function addFoodsToMealAction(input: z.input<typeof addFoodsSchema>): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const { data, error } = validate(addFoodsSchema, input);
+  if (error !== undefined) return fail(error);
+
+  const foods = await db.food.findMany({
+    where: { id: { in: data.items.map((i) => i.foodId) }, OR: [{ userId }, { userId: null }] },
+  });
+  const byId = new Map(foods.map((f) => [f.id, f]));
+  if (data.items.some((i) => !byId.has(i.foodId))) return fail("Alimento não encontrado");
+
+  const meal = await getOrCreateMeal(userId, data.date, data.mealType);
+  await db.mealFood.createMany({
+    data: data.items.map((i) => ({ mealId: meal.id, foodId: i.foodId, quantity: i.quantity, ...scaleMacros(byId.get(i.foodId)!, i.quantity) })),
   });
   refreshApp();
   return ok;
@@ -215,6 +242,78 @@ export async function lookupBarcodeAction(raw: string): Promise<ActionResult<Bar
   });
   refreshApp();
   return { ok: true, data: { status: "found", food: toFoodOption(food), created: true } };
+}
+
+// ───────────── Foto do prato (IA) ─────────────
+
+const PHOTO_SOURCE = "Estimativa por foto (IA)";
+const DATA_URL = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/;
+
+export type PlateItem = PlateEstimate["items"][number];
+
+/** Analisa a foto (data URL já compactada no cliente) e devolve os itens estimados. Não grava nada. */
+export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionResult<{ items: PlateItem[]; note: string }>> {
+  await requireUserId();
+  if (!isPlateAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta ANTHROPIC_API_KEY).");
+  if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
+  const m = DATA_URL.exec(dataUrl);
+  if (!m) return fail("Formato de imagem inválido");
+
+  try {
+    const r = await estimatePlate({ mediaType: m[1] as "image/jpeg" | "image/png" | "image/webp", base64: m[2] });
+    if (!r.isFood || r.items.length === 0) return fail("Não encontrei comida nesta foto. Tente enquadrar o prato de cima.");
+    const items = r.items
+      .filter((i) => i.grams > 0)
+      .map((i) => ({ ...i, name: i.name.trim().slice(0, 80), grams: Math.round(i.grams), kcal: Math.max(0, i.kcal), protein: Math.max(0, i.protein), carbs: Math.max(0, i.carbs), fat: Math.max(0, i.fat) }));
+    return { ok: true, data: { items, note: r.note } };
+  } catch (e) {
+    console.error("[analyzePlatePhotoAction]", e);
+    return fail(e instanceof Error && e.message.startsWith("A IA") ? e.message : "Falha ao analisar a foto. Tente de novo.");
+  }
+}
+
+const plateItemsSchema = z.object({
+  date: dateSchema,
+  mealType: z.enum(MealType),
+  items: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(80),
+        grams: z.coerce.number().positive().max(5000),
+        kcal: z.coerce.number().min(0).max(10_000),
+        protein: z.coerce.number().min(0).max(1000),
+        carbs: z.coerce.number().min(0).max(1000),
+        fat: z.coerce.number().min(0).max(1000),
+      }),
+    )
+    .min(1, "Selecione ao menos um item")
+    .max(20),
+});
+
+/**
+ * Registra os itens confirmados. Cada item vira um alimento do usuário arquivado (não aparece
+ * na busca) com os macros da porção estimada — assim editar a quantidade depois recalcula certo.
+ */
+export async function logPlateItemsAction(input: z.input<typeof plateItemsSchema>): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const { data, error } = validate(plateItemsSchema, input);
+  if (error !== undefined) return fail(error);
+
+  const meal = await getOrCreateMeal(userId, data.date, data.mealType);
+  await db.$transaction(async (tx) => {
+    for (const i of data.items) {
+      const food = await tx.food.create({
+        data: {
+          userId, name: i.name, servingSize: i.grams, unit: FoodUnit.G,
+          kcal: i.kcal, protein: i.protein, carbs: i.carbs, fat: i.fat,
+          sourceName: PHOTO_SOURCE, archived: true,
+        },
+      });
+      await tx.mealFood.create({ data: { mealId: meal.id, foodId: food.id, quantity: i.grams, ...scaleMacros(food, i.grams) } });
+    }
+  });
+  refreshApp();
+  return ok;
 }
 
 export async function archiveFoodAction(id: string): Promise<ActionResult> {
