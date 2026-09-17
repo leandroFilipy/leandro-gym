@@ -40,6 +40,13 @@ describe("buildShoppingList", () => {
   });
 });
 
+describe("buildShoppingList com período curto", () => {
+  it("base de 1 dia: multiplica o que foi comido ontem pelos dias da compra", () => {
+    const list = buildShoppingList([item("a", "Aveia", 60, "2026-09-16")], { sourceDays: 1, targetDays: 7, minDaysEaten: 1 });
+    expect(list.map((i) => [i.name, i.amount, i.unit])).toEqual([["Aveia", 450, "g"]]); // 420 g → 450 g
+  });
+});
+
 describe("shoppingListText", () => {
   it("gera texto com caixas de marcar", () => {
     const text = shoppingListText([{ foodId: "a", name: "Aveia", amount: 1.5, unit: "kg", daysEaten: 5, cooked: false }], 7);

@@ -24,7 +24,7 @@ export default async function ShoppingPage({ searchParams }: PageProps<"/dieta/c
 
   return (
     <>
-      <PageHeader title="Lista de compras" back="/dieta" subtitle={`Pelo que você comeu de ${fmtDayMonth(start)} a ${fmtDayMonth(end)}`} />
+      <PageHeader title="Lista de compras" back="/dieta" subtitle={base === 1 ? `Pelo que você comeu ontem (${fmtDayMonth(end)})` : `Pelo que você comeu de ${fmtDayMonth(start)} a ${fmtDayMonth(end)}`} />
       <div className="flex flex-col gap-4">
         <Options label="Comprar para" param="dias" value={days} options={SHOPPING_TARGET_DAYS} other={{ base }} />
         <Options label="Com base nos últimos" param="base" value={base} options={SHOPPING_SOURCE_DAYS} other={{ dias: days }} />
@@ -32,7 +32,11 @@ export default async function ShoppingPage({ searchParams }: PageProps<"/dieta/c
         {items.length === 0 ? (
           <EmptyState
             title="Nada para listar ainda"
-            text="A lista usa os alimentos que você registrou em pelo menos 2 dias do período. Registre a dieta por alguns dias ou aumente o período."
+            text={
+              base < 7
+                ? "Não há alimentos registrados nesse período. Registre a dieta ou escolha um período maior."
+                : "A lista usa os alimentos que você registrou em pelo menos 2 dias do período. Registre a dieta por alguns dias ou escolha outro período."
+            }
           />
         ) : (
           <>
@@ -53,7 +57,7 @@ function Options({ label, param, value, options, other }: { label: string; param
   return (
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
       <span className="text-sm text-muted sm:w-40 sm:shrink-0">{label}</span>
-      <div className="flex gap-1">
+      <div className="flex flex-wrap gap-1">
         {options.map((o) => (
           <Link
             key={o}
@@ -61,7 +65,7 @@ function Options({ label, param, value, options, other }: { label: string; param
             replace
             className={cn("rounded-full border px-3 py-1.5 text-sm", o === value ? "border-accent bg-accent/10 text-accent" : "border-line text-muted")}
           >
-            {o} dias
+            {o} {o === 1 ? "dia" : "dias"}
           </Link>
         ))}
       </div>
