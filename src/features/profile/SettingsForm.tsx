@@ -17,6 +17,9 @@ export interface SettingsValues {
   activityLevel: "SEDENTARY" | "LIGHT" | "MODERATE" | "ACTIVE" | "VERY_ACTIVE";
   dietGoal: "LOSE" | "MAINTAIN" | "GAIN";
   autoNutritionGoal: boolean;
+  carbCyclingEnabled: boolean;
+  restDayCarbsCut: number;
+  mealRemindersEnabled: boolean;
   timezone: string;
   dailyEmailEnabled: boolean;
   dailyEmailTime: string;
@@ -110,12 +113,34 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         <p className="-mt-1 text-xs text-muted">
           Precisa de altura, sexo e data de nascimento preenchidos. Usa a fórmula de Mifflin-St Jeor com base no seu peso mais recente.
         </p>
+        <Toggle
+          label="Meta diferente em dia de treino e de descanso"
+          description="Menos carboidrato no descanso; o que sobra vai para os dias de treino (a média da semana não muda)"
+          name="carbCyclingEnabled"
+          defaultChecked={values.carbCyclingEnabled}
+        />
+        <Field
+          label="Carboidrato a menos no dia de descanso (g)"
+          name="restDayCarbsCut"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={300}
+          defaultValue={values.restDayCarbsCut}
+        />
+        <p className="-mt-1 text-xs text-muted">Usa os dias de treino da ficha ativa. Se você treinar num dia de descanso, o dia vira de treino.</p>
       </Section>
 
       <Section title="Lembretes e relatórios">
         <Toggle label="E-mail com o treino do dia" description="Requer e-mail configurado no servidor" name="dailyEmailEnabled" defaultChecked={values.dailyEmailEnabled} />
         <Field label="Horário do e-mail" name="dailyEmailTime" type="time" defaultValue={values.dailyEmailTime} />
         <Toggle label="Relatório semanal por e-mail (domingo)" name="weeklyReportEnabled" defaultChecked={values.weeklyReportEnabled} />
+        <Toggle
+          label="Lembrete de registrar refeições"
+          description="Notificação push ~13h30 se o almoço estiver vazio e ~21h se o jantar estiver vazio (requer push ativado)"
+          name="mealRemindersEnabled"
+          defaultChecked={values.mealRemindersEnabled}
+        />
         <SelectField label="Fuso horário" name="timezone" defaultValue={values.timezone}>
           {zones.map((z) => (
             <option key={z} value={z}>

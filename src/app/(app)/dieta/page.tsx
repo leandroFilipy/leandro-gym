@@ -60,6 +60,19 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
       />
       <div className="flex flex-col gap-4">
         <Card>
+          {diary.dayKind && (
+            <p className="mb-3 flex items-center justify-between gap-2 text-xs text-muted">
+              <span className="font-display font-bold uppercase tracking-wider text-fg">
+                {diary.dayKind === "training" ? "💪 Dia de treino" : "😴 Dia de descanso"}
+              </span>
+              {diary.carbsDelta !== 0 && (
+                <span className="tabular">
+                  {diary.carbsDelta > 0 ? "+" : "−"}
+                  {Math.abs(diary.carbsDelta)} g de carboidrato na meta
+                </span>
+              )}
+            </p>
+          )}
           <GoalBars totals={diary.totals} goal={diary.goal} />
         </Card>
 

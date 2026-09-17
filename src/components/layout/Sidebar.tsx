@@ -9,7 +9,7 @@ import { Wordmark } from "./Wordmark";
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line bg-surface md:flex print:hidden">
       <Link href="/" className="px-5 pb-8 pt-6">
         <Wordmark />
       </Link>

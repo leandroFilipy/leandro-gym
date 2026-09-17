@@ -24,6 +24,26 @@
   --radius-3xl: 8px;
 }
 
+/* Impressão / "Salvar PDF" (relatórios): papel branco, texto escuro, sem menus. */
+@media print {
+  :root {
+    --color-bg: #fff;
+    --color-surface: #fff;
+    --color-surface-2: #f2f2f0;
+    --color-line: #d6d4ce;
+    --color-fg: #111;
+    --color-muted: #555;
+    --color-faint: #777;
+    --color-accent: #d94400;
+    --color-success: #13803f;
+    --color-warn: #a86b00;
+    --color-danger: #c4122a;
+  }
+  main {
+    padding: 0 !important;
+  }
+}
+
 @theme inline {
   --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-barlow-condensed), "Arial Narrow", ui-sans-serif, sans-serif;

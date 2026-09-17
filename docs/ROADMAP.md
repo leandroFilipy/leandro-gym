@@ -81,6 +81,12 @@
 - [x] "O que eu como agora?" — sugestões para fechar a meta do dia
 - [x] Foto do prato com IA (Gemini, plano gratuito) — estimativa revisável antes de registrar
 
+## Fase 6 — Corpo, dieta e acompanhamento
+- [x] % de gordura estimado pelas medidas (fórmula da Marinha)
+- [x] Meta diferente em dia de treino e de descanso (ciclo de carboidrato)
+- [x] Lembrete push de registrar almoço/jantar
+- [x] Relatório mensal (salvar em PDF / compartilhar)
+
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
   Registro inicial; os blocos seguintes foram implementados sem atualização deste arquivo.
@@ -148,3 +154,19 @@
 - 2026-09-17 — Foto do prato migrada do Claude para o Google Gemini (`@google/genai`,
   `gemini-3.8-flash`, plano gratuito) para não ter custo. Variável: `GEMINI_API_KEY`
   (opcional `GEMINI_MODEL`). Erro 429 (limite gratuito) e chave inválida viram mensagens claras.
+- 2026-09-17 — Fase 6: (1) `lib/domain/body-fat.ts`: fórmula da Marinha (homem: cintura−pescoço;
+  mulher: cintura+quadril−pescoço), série carregando a última medida conhecida, faixas ACE;
+  `BodyFatCard` em `/progresso/corpo` (precisa altura e sexo no Perfil). (2)
+  `lib/domain/carb-cycling.ts` + `getDayGoal` em `services/nutrition.ts`: com
+  `carbCyclingEnabled`, descanso = meta − `restDayCarbsCut` g de carbo; treino recebe o total
+  dividido pelos dias de treino da ficha ativa (média semanal igual). Dia é de treino se a ficha
+  tem treino no weekday ou se houve sessão na data. Usado na Dieta (com aviso do tipo do dia),
+  nas sugestões e na Home. (3) `/api/cron/meal-reminder` (+ `-night`, mesmo handler): push se
+  almoço (12–17h local) ou jantar (19–24h) estiverem vazios; `mealRemindersEnabled`. Agendado
+  16:30 e 00:00 UTC (Hobby só permite crons diários). (4) `/progresso/relatorio/mensal`
+  (`services/monthly-report.ts`): treinos × planejado, séries, horas, volume vs mês anterior,
+  evolução do 1RM (mês × antes), recordes, peso/cintura/% gordura, médias de dieta e dias
+  batendo proteína; "Salvar PDF" (`window.print`, CSS de impressão claro em `globals.css`,
+  menus `print:hidden`) e "Compartilhar" (texto). Migração
+  `20260917140000_carb_cycling_meal_reminders`. Validado ponta a ponta no banco local (20
+  verificações). `typecheck`, `lint`, `test` (142) e `build` ok.

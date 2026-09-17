@@ -68,6 +68,10 @@ export default async function ReportPage({ searchParams }: PageProps<"/progresso
           )}
         </Card>
 
+        <Link href="/progresso/relatorio/mensal" className="rounded-2xl border border-line bg-surface p-3 text-center text-sm text-muted hover:text-fg">
+          Ver resumo do mês →
+        </Link>
+
         <Card>
           <CardHeader title="Novos recordes" />
           {r.records.length === 0 ? (

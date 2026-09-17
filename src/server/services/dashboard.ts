@@ -3,7 +3,7 @@ import { db } from "../db";
 import { getSettings } from "../session";
 import { hourIn, todayIn } from "@/lib/dates";
 import { getLastFinishedSession, getToday, getWeekCalendar } from "./workouts";
-import { getActiveGoal, getDayTotals } from "./nutrition";
+import { getDayGoal, getDayTotals } from "./nutrition";
 import { getWeightSummary } from "./body";
 import { listRecentRecords } from "./records";
 import { getStagnationAlerts, getWeeklyMuscleVolume } from "./insights";
@@ -19,7 +19,7 @@ export async function getDashboard(userId: string) {
     getWeekCalendar(userId),
     getLastFinishedSession(userId),
     getDayTotals(userId, today),
-    getActiveGoal(userId, today),
+    getDayGoal(userId, today).then((g) => g.goal),
     getWeightSummary(userId, today),
     listRecentRecords(userId, 3),
     getStagnationAlerts(userId),

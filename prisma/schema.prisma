@@ -81,12 +81,15 @@ model UserSettings {
   activityLevel      ActivityLevel @default(MODERATE)
   dietGoal           DietGoal      @default(MAINTAIN)
   autoNutritionGoal  Boolean       @default(false) // recalcula a meta ao registrar peso
+  carbCyclingEnabled Boolean       @default(false) // meta diferente em dia de treino × descanso
+  restDayCarbsCut    Int           @default(60) // g de carboidrato a menos no descanso (volta nos dias de treino)
 
   // Automações (fase 2)
   dailyEmailEnabled   Boolean @default(false)
   dailyEmailTime      String  @default("07:00") // HH:mm no fuso do usuário
   weeklyReportEnabled Boolean @default(false)
   pushEnabled         Boolean @default(false) // lembrete push do treino do dia
+  mealRemindersEnabled Boolean @default(false) // push se almoço/jantar ficarem sem registro
 
   updatedAt DateTime @updatedAt
 }

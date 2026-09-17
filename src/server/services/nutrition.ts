@@ -1,6 +1,8 @@
 import "server-only";
 import { db } from "../db";
-import { addDays, fromDbDate, toDbDate, type DateStr } from "@/lib/dates";
+import { addDays, fromDbDate, isoWeekday, toDbDate, type DateStr } from "@/lib/dates";
+import { goalForDay, type DayKind } from "@/lib/domain/carb-cycling";
+import { getSettings } from "../session";
 import { sumMacros } from "@/lib/domain/nutrition";
 import { median, suggestMeals, type SuggestionFood } from "@/lib/domain/meal-suggestions";
 import type { DatedValue, Macros } from "@/lib/domain/types";
@@ -13,6 +15,29 @@ export async function getActiveGoal(userId: string, date: DateStr) {
   });
 }
 
+/**
+ * Meta que vale no dia. Com o ciclo de carboidrato ligado, ajusta pelo tipo do dia: treino se a
+ * ficha ativa tem treino nesse dia da semana ou se houve sessão na data; descanso caso contrário.
+ */
+export async function getDayGoal(userId: string, date: DateStr) {
+  const [base, settings] = await Promise.all([getActiveGoal(userId, date), getSettings(userId)]);
+  if (!base) return { goal: null, base: null, dayKind: null, carbsDelta: 0 };
+  const baseMacros = { kcal: base.kcal, protein: base.protein, carbs: base.carbs, fat: base.fat };
+  if (!settings.carbCyclingEnabled) return { goal: baseMacros, base: baseMacros, dayKind: null, carbsDelta: 0 };
+
+  const [plan, session] = await Promise.all([
+    db.workoutPlan.findFirst({ where: { userId, active: true }, select: { days: { select: { weekday: true, type: true } } } }),
+    db.workoutSession.findFirst({ where: { userId, date: toDbDate(date) }, select: { id: true } }),
+  ]);
+  if (!plan) return { goal: baseMacros, base: baseMacros, dayKind: null, carbsDelta: 0 };
+
+  const trainingDays = plan.days.filter((d) => d.type !== "REST").length;
+  const planDay = plan.days.find((d) => d.weekday === isoWeekday(date));
+  const dayKind: DayKind = session || (planDay && planDay.type !== "REST") ? "training" : "rest";
+  const goal = goalForDay(baseMacros, dayKind, { restDayCarbsCut: settings.restDayCarbsCut, trainingDays, restDays: 7 - trainingDays });
+  return { goal, base: baseMacros, dayKind, carbsDelta: goal.carbs - baseMacros.carbs };
+}
+
 export async function getDiary(userId: string, date: DateStr) {
   const meals = await db.meal.findMany({
     where: { userId, date: toDbDate(date) },
@@ -20,7 +45,7 @@ export async function getDiary(userId: string, date: DateStr) {
       foods: { orderBy: { createdAt: "asc" }, include: { food: { select: { name: true, unit: true } } } },
     },
   });
-  const goal = await getActiveGoal(userId, date);
+  const { goal, dayKind, carbsDelta } = await getDayGoal(userId, date);
 
   const byType = MEAL_TYPES.map((type) => {
     const meal = meals.find((m) => m.type === type);
@@ -42,7 +67,7 @@ export async function getDiary(userId: string, date: DateStr) {
     };
   });
 
-  return { date, meals: byType, totals: sumMacros(byType.map((m) => m.totals)), goal };
+  return { date, meals: byType, totals: sumMacros(byType.map((m) => m.totals)), goal, dayKind, carbsDelta };
 }
 
 export async function getDayTotals(userId: string, date: DateStr): Promise<Macros> {

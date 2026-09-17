@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardHeader, EmptyState } from "@/components/ui/Card";
+import { BodyFatCard } from "@/features/body/BodyFatCard";
 import { DeleteBodyItemButton } from "@/features/body/DeleteBodyItemButton";
+import { navySeries } from "@/lib/domain/body-fat";
 import { MeasurementChart } from "@/features/body/MeasurementChart";
 import { MeasurementForm } from "@/features/body/MeasurementForm";
 import { PhotoCompareControls } from "@/features/body/PhotoCompareControls";
@@ -39,6 +41,7 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
   const whr = waistToHip(latest);
   const recentEntries = [...entries].reverse().slice(0, 10);
   const usedFields = MEASUREMENT_FIELDS.filter((f) => entries.some((e) => typeof e[f] === "number"));
+  const bodyFat = settings.sex && settings.heightCm ? navySeries(entries, settings.sex, settings.heightCm) : [];
 
   // ── Fotos: pose e datas para comparar (padrão: primeira × última)
   const datesByPose = Object.fromEntries(POSES.map((p) => [p, photos.filter((x) => x.pose === p).map((x) => x.date)])) as Record<PhotoPose, string[]>;
@@ -87,6 +90,8 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
             )}
           </Card>
         )}
+
+        <BodyFatCard series={bodyFat} sex={settings.sex} heightCm={settings.heightCm} />
 
         <Card>
           <CardHeader title="Registrar medidas" />

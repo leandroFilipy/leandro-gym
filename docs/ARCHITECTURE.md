@@ -180,6 +180,16 @@ Sem as chaves VAPID, a UI informa que o recurso não está configurado.
   No plano gratuito o Google pode usar o conteúdo para melhorar produtos. A foto é compactada no cliente
   (1024px) e não é salva. Nada é registrado sem confirmação do usuário.
 
+## Fase 6 — regras de corpo e dieta
+
+- **% de gordura** (`body-fat.ts`): fórmula da Marinha dos EUA com medidas em cm; exibida como
+  estimativa (±3–4 p.p.).
+- **Meta do dia** (`getDayGoal`): toda tela que mostra meta usa essa função. Com ciclo de
+  carboidrato, descanso tira `restDayCarbsCut` g e os dias de treino recebem o total dividido
+  (a média semanal continua igual à `NutritionGoal`).
+- **Crons diários** (plano Hobby): o lembrete de refeição roda em dois caminhos
+  (`meal-reminder` e `meal-reminder-night`) com o mesmo handler.
+
 ## Segurança
 
 - `proxy.ts` redireciona não autenticados para `/login` (checagem otimista).

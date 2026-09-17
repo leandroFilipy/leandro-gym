@@ -27,6 +27,9 @@ const settingsSchema = z.object({
   activityLevel: z.enum(ActivityLevel),
   dietGoal: z.enum(DietGoal),
   autoNutritionGoal: checkbox,
+  carbCyclingEnabled: checkbox,
+  restDayCarbsCut: z.coerce.number().int().min(0, "Corte inválido").max(300, "Corte de carboidrato muito alto"),
+  mealRemindersEnabled: checkbox,
   timezone: z.string().refine((tz) => {
     try {
       new Intl.DateTimeFormat("en", { timeZone: tz });

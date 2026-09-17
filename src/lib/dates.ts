@@ -49,3 +49,27 @@ export function daysBetween(a: DateStr, b: DateStr): number {
 export function isValidDateStr(d: string): d is DateStr {
   return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(toDbDate(d).getTime());
 }
+
+// ───────────── Meses (YYYY-MM) ─────────────
+
+export type MonthStr = string; // YYYY-MM
+
+export function isValidMonth(m: string): m is MonthStr {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
+}
+
+export function monthOf(d: DateStr): MonthStr {
+  return d.slice(0, 7);
+}
+
+export function addMonths(m: MonthStr, n: number): MonthStr {
+  const [y, mo] = m.split("-").map(Number);
+  const total = y * 12 + (mo - 1) + n;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
+}
+
+/** Primeiro e último dia do mês. */
+export function monthRange(m: MonthStr): { start: DateStr; end: DateStr } {
+  const start = `${m}-01`;
+  return { start, end: addDays(`${addMonths(m, 1)}-01`, -1) };
+}
