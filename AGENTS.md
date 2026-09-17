@@ -14,6 +14,9 @@
    - Nada de `any`. Componentes pequenos; um módulo por pasta em `src/features`.
    - Textos da interface em português (pt-BR).
 4. Antes de terminar: `npx tsc --noEmit` e `npm run lint` sem erros; atualize o ROADMAP.
+5. Ideias recusadas pelo dono — **não sugerir** de novo:
+   - Calculadora/contador de anilhas.
+   - Trocar exercício/máquina quando o aparelho estiver ocupado.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
