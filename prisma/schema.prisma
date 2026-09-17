@@ -34,6 +34,29 @@ model User {
   nutritionGoals  NutritionGoal[]
   weeklyReports   WeeklyReport[]
   pushSubscriptions PushSubscription[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Link de "esqueci minha senha". Só o hash (sha256) do token fica no banco.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Limite de tentativas (login, recuperação de senha) por chave — ex.: "login:email:x@y.com".
+model AuthThrottle {
+  key         String    @id
+  failures    Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
 enum Sex {
@@ -404,7 +427,9 @@ enum PhotoPose {
   BACK
 }
 
-// Foto de progresso. Imagens compactadas no cliente e salvas como data URL.
+// Foto de progresso. Imagens compactadas no cliente; guardadas no Vercel Blob privado
+// ("blob:<pathname>") e servidas por /api/body-photos/[id]. Registros antigos podem ter data URL
+// (migrados para o Blob na primeira leitura).
 model BodyPhoto {
   id        String    @id @default(cuid())
   userId    String

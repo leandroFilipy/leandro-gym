@@ -130,3 +130,21 @@ export function weeklyReportEmail(report: WeeklyReportData): { subject: string; 
     text,
   };
 }
+
+export function passwordResetEmail(input: { name: string; url: string }): { subject: string; html: string; text: string } {
+  const hello = input.name ? `Oi, ${esc(input.name.split(" ")[0])}!` : "Oi!";
+  const bodyHtml = `<p style="margin:0 0 12px;">${hello} Recebemos um pedido para redefinir a senha da sua conta.</p>
+    <p style="margin:0 0 4px;color:${MUTED};">O link vale por <strong style="color:${FG};">1 hora</strong> e só pode ser usado uma vez.</p>`;
+  return {
+    subject: "Redefinir sua senha — Leandro Gym",
+    html: emailLayout({
+      title: "Redefinir senha",
+      preview: "Link para criar uma nova senha (vale por 1 hora).",
+      bodyHtml,
+      ctaText: "Criar nova senha",
+      ctaHref: input.url,
+      footerHtml: "Não foi você? Pode ignorar este e-mail — sua senha continua a mesma.",
+    }),
+    text: `${input.name ? `Oi, ${input.name.split(" ")[0]}! ` : ""}Para redefinir sua senha, abra o link (vale por 1 hora):\n${input.url}\n\nNão foi você? Ignore este e-mail.`,
+  };
+}

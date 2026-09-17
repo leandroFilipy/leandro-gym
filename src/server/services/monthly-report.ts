@@ -7,6 +7,7 @@ import { estimate1RM, percentChange, totalVolume } from "@/lib/domain/volume";
 import { averageBetween } from "@/lib/domain/weight";
 import { getMeasurements, getWeightSeries } from "./body";
 import { getActiveGoal, getDailyTotals } from "./nutrition";
+import { bestSetsForExercises } from "./records";
 
 // Relatório do mês: treino, força, corpo e dieta num lugar só (para guardar ou mandar ao
 // personal/nutricionista).
@@ -61,16 +62,8 @@ export async function getMonthlyReport(userId: string, month: MonthStr) {
         const cur = bestThisMonth.get(e.exerciseId);
         if (!cur || v > cur.e1rm) bestThisMonth.set(e.exerciseId, { name: e.exercise.name, e1rm: v });
       }
-  const before = await db.exerciseSet.findMany({
-    where: { completed: true, workoutExercise: { exerciseId: { in: [...bestThisMonth.keys()] }, session: { userId, date: { lt: toDbDate(start) } } } },
-    select: { weight: true, repetitions: true, workoutExercise: { select: { exerciseId: true } } },
-  });
-  const bestBefore = new Map<string, number>();
-  for (const s of before) {
-    const v = estimate1RM(s.weight, s.repetitions);
-    const id = s.workoutExercise.exerciseId;
-    if (v > (bestBefore.get(id) ?? 0)) bestBefore.set(id, v);
-  }
+  const before = await bestSetsForExercises(userId, [...bestThisMonth.keys()], toDbDate(start));
+  const bestBefore = new Map([...before].filter(([, b]) => b.e1rm > 0).map(([id, b]) => [id, b.e1rm]));
   const strength = [...bestThisMonth.entries()]
     .filter(([id]) => bestBefore.has(id))
     .map(([id, b]) => ({ name: b.name, before: bestBefore.get(id)!, now: b.e1rm, pct: percentChange(b.e1rm, bestBefore.get(id)!) ?? 0 }))

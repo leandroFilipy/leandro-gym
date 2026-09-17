@@ -24,6 +24,11 @@ export function AuthForm({ mode, next = "/" }: { mode: "login" | "register"; nex
         minLength={isLogin ? undefined : 6}
         required
       />
+      {isLogin && (
+        <Link href="/esqueci-senha" className="-mt-2 self-end text-sm text-muted hover:text-fg">
+          Esqueci minha senha
+        </Link>
+      )}
       <FormError message={state && !state.ok ? state.error : null} />
       <SubmitButton size="lg" block>
         {isLogin ? "Entrar" : "Criar conta"}

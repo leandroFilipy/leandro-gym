@@ -26,6 +26,15 @@ export interface SettingsValues {
   weeklyReportEnabled: boolean;
 }
 
+/** Horas com cron agendado (vercel.json: /api/cron/daily-email/05 … /22). */
+const REMINDER_HOURS = Array.from({ length: 18 }, (_, i) => `${String(i + 5).padStart(2, "0")}:00`);
+
+/** Valor salvo antigo (ex.: "07:30" ou "03:00") → hora cheia disponível mais próxima. */
+function reminderHour(value: string) {
+  const h = Math.min(22, Math.max(5, Number(value.slice(0, 2)) || 7));
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
 const TIMEZONES = ["America/Sao_Paulo", "America/Manaus", "America/Belem", "America/Fortaleza", "America/Recife", "America/Cuiaba", "America/Rio_Branco", "America/Noronha", "Europe/Lisbon"];
 
 const ACTIVITY_LABEL: Record<SettingsValues["activityLevel"], string> = {
@@ -133,7 +142,14 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
 
       <Section title="Lembretes e relatórios">
         <Toggle label="E-mail com o treino do dia" description="Requer e-mail configurado no servidor" name="dailyEmailEnabled" defaultChecked={values.dailyEmailEnabled} />
-        <Field label="Horário do e-mail" name="dailyEmailTime" type="time" defaultValue={values.dailyEmailTime} />
+        <SelectField label="Horário do lembrete do treino (e-mail e push)" name="dailyEmailTime" defaultValue={reminderHour(values.dailyEmailTime)}>
+          {REMINDER_HOURS.map((h) => (
+            <option key={h} value={h}>
+              {h}
+            </option>
+          ))}
+        </SelectField>
+        <p className="-mt-1 text-xs text-muted">Chega dentro dessa hora (ex.: 07:00 → entre 7h e 7h59).</p>
         <Toggle label="Relatório semanal por e-mail (domingo)" name="weeklyReportEnabled" defaultChecked={values.weeklyReportEnabled} />
         <Toggle
           label="Lembrete de registrar refeições"

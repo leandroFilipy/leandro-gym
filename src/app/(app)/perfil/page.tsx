@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { AccountDataCard } from "@/features/profile/AccountDataCard";
 import { AutoGoalPreview } from "@/features/profile/AutoGoalPreview";
 import { GoalForm } from "@/features/profile/GoalForm";
 import { SettingsForm } from "@/features/profile/SettingsForm";
@@ -111,6 +112,8 @@ export default async function ProfilePage() {
             <strong className="text-fg">iPhone (Safari):</strong> compartilhar → &quot;Adicionar à Tela de Início&quot;.
           </p>
         </Card>
+
+        <AccountDataCard />
 
         <form action={logoutAction}>
           <Button type="submit" variant="secondary" block>

@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 import { db } from "../db";
@@ -50,6 +50,10 @@ async function loginWith(email: string, password: string, redirectTo: string): P
     await signIn("credentials", { email, password, redirectTo });
     return { ok: true };
   } catch (e) {
+    if (e instanceof CredentialsSignin && e.code.startsWith("rate_limited")) {
+      const minutes = Number(e.code.split(":")[1]) || 15;
+      return fail(`Muitas tentativas erradas. Tente de novo em ${minutes} min ou use "Esqueci minha senha".`);
+    }
     if (e instanceof AuthError) return fail("E-mail ou senha incorretos");
     throw e; // NEXT_REDIRECT precisa propagar
   }

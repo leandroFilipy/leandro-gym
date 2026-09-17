@@ -47,17 +47,17 @@ export async function listBodyPhotos(userId: string) {
   const rows = await db.bodyPhoto.findMany({
     where: { userId },
     orderBy: [{ date: "desc" }, { pose: "asc" }],
-    select: { id: true, date: true, pose: true, thumbUrl: true },
+    select: { id: true, date: true, pose: true },
   });
-  return rows.map((r) => ({ ...r, date: fromDbDate(r.date) }));
+  return rows.map((r) => ({ ...r, date: fromDbDate(r.date), thumbUrl: `/api/body-photos/${r.id}?size=thumb` }));
 }
 
 export async function getBodyPhoto(userId: string, date: DateStr, pose: PhotoPose) {
   const r = await db.bodyPhoto.findFirst({
     where: { userId, date: toDbDate(date), pose },
-    select: { id: true, date: true, pose: true, imageUrl: true },
+    select: { id: true, date: true, pose: true },
   });
-  return r ? { ...r, date: fromDbDate(r.date) } : null;
+  return r ? { ...r, date: fromDbDate(r.date), imageUrl: `/api/body-photos/${r.id}?size=full` } : null;
 }
 
 /**

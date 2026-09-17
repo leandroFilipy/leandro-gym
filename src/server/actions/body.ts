@@ -7,6 +7,7 @@ import { isValidDateStr, toDbDate } from "@/lib/dates";
 import { MEASUREMENT_FIELDS } from "@/lib/domain/measurements";
 import { PhotoPose } from "@/generated/prisma/enums";
 import { recalcAutoNutritionGoal } from "../services/nutrition-goal";
+import { deletePhotos, storePhoto } from "../storage/photos";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const weightSchema = z.object({
@@ -106,18 +107,35 @@ export async function saveBodyPhotoAction(input: z.input<typeof photoSchema>): P
   const { data, error } = validate(photoSchema, input);
   if (error !== undefined) return fail(error);
   const date = toDbDate(data.date);
+  const where = { userId_date_pose: { userId, date, pose: data.pose } };
+  const previous = await db.bodyPhoto.findUnique({ where, select: { imageUrl: true, thumbUrl: true } });
+
+  const name = `${data.date}-${data.pose.toLowerCase()}`;
+  let imageUrl: string, thumbUrl: string;
+  try {
+    [imageUrl, thumbUrl] = await Promise.all([storePhoto(userId, `${name}-full`, data.imageUrl), storePhoto(userId, `${name}-thumb`, data.thumbUrl)]);
+  } catch (e) {
+    console.error("[saveBodyPhotoAction] falha no upload", e);
+    return fail("Não foi possível salvar a foto agora. Tente de novo.");
+  }
+
   await db.bodyPhoto.upsert({
-    where: { userId_date_pose: { userId, date, pose: data.pose } },
-    create: { userId, date, pose: data.pose, imageUrl: data.imageUrl, thumbUrl: data.thumbUrl },
-    update: { imageUrl: data.imageUrl, thumbUrl: data.thumbUrl },
+    where,
+    create: { userId, date, pose: data.pose, imageUrl, thumbUrl },
+    update: { imageUrl, thumbUrl },
   });
+  // Substituiu a foto do dia/pose: remove os arquivos antigos.
+  if (previous) await deletePhotos([previous.imageUrl, previous.thumbUrl]).catch((e) => console.error("[saveBodyPhotoAction] limpeza", e));
   refreshApp();
   return ok;
 }
 
 export async function deleteBodyPhotoAction(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
+  const photo = await db.bodyPhoto.findFirst({ where: { id, userId }, select: { imageUrl: true, thumbUrl: true } });
+  if (!photo) return ok;
   await db.bodyPhoto.deleteMany({ where: { id, userId } });
+  await deletePhotos([photo.imageUrl, photo.thumbUrl]).catch((e) => console.error("[deleteBodyPhotoAction] limpeza", e));
   refreshApp();
   return ok;
 }

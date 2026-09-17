@@ -39,7 +39,8 @@ const settingsSchema = z.object({
     }
   }, "Fuso horário inválido"),
   dailyEmailEnabled: checkbox,
-  dailyEmailTime: z.string().regex(/^\d{2}:\d{2}$/, "Horário inválido"),
+  // Só horas cheias entre 05h e 22h (há um cron diário para cada uma).
+  dailyEmailTime: z.string().regex(/^(0[5-9]|1\d|2[0-2]):00$/, "Horário inválido"),
   weeklyReportEnabled: checkbox,
 });
 

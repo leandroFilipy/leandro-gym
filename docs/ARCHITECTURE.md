@@ -190,6 +190,25 @@ Sem as chaves VAPID, a UI informa que o recurso não está configurado.
 - **Crons diários** (plano Hobby): o lembrete de refeição roda em dois caminhos
   (`meal-reminder` e `meal-reminder-night`) com o mesmo handler.
 
+## Conta, segurança e armazenamento (revisão 2026-09-17)
+
+- **Limite de tentativas** (`lib/domain/throttle.ts` + tabela `AuthThrottle`): login bloqueia 15 min
+  após 5 erros por e-mail ou 20 por IP (checado no `authorize` do Auth.js, vale para qualquer
+  caminho de login); pedidos de "esqueci a senha" limitados a 3/h por e-mail e 10/h por IP.
+- **Recuperação de senha**: `PasswordResetToken` guarda só o sha256 do token; link de 1 h, uso
+  único, resposta idêntica exista ou não a conta. Páginas `/esqueci-senha` e
+  `/redefinir-senha/[token]` liberadas no `auth.config`.
+- **Fotos de progresso**: Vercel Blob privado (`server/storage/photos.ts`). Banco guarda
+  `blob:<pathname>`; a imagem só sai por `/api/body-photos/[id]` após checar o dono
+  (`Cache-Control: private, no-cache` + ETag). Data URLs antigos migram na primeira leitura.
+- **Recordes**: melhor 1RM por exercício via SQL (`DISTINCT ON` em `services/records.ts`),
+  sem carregar o histórico de séries.
+- **Dados do usuário**: `/api/export/[kind]` (CSV `;` + vírgula decimal + BOM) e
+  `deleteAccountAction` (senha + "EXCLUIR"; apaga refeições, fichas e sessões antes do usuário
+  por causa das FKs `Restrict`, depois as fotos no Blob).
+- **Lembrete do treino**: 18 crons diários (`/api/cron/daily-email/05` … `/22`, Hobby) com o
+  mesmo handler; o Perfil só oferece horas cheias nessa faixa.
+
 ## Segurança
 
 - `proxy.ts` redireciona não autenticados para `/login` (checagem otimista).

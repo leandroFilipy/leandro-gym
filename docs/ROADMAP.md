@@ -170,3 +170,16 @@
   menus `print:hidden`) e "Compartilhar" (texto). Migração
   `20260917140000_carb_cycling_meal_reminders`. Validado ponta a ponta no banco local (20
   verificações). `typecheck`, `lint`, `test` (142) e `build` ok.
+- 2026-09-17 — Revisão de qualidade (6 correções): (1) Lembrete do treino só funcionava às 7h
+  (cron diário único): agora há um cron por hora 05–22h e o Perfil oferece só horas cheias.
+  (2) "Esqueci minha senha" com token de 1 h (hash no banco) e e-mail via Resend. (3) Fotos de
+  progresso no Vercel Blob privado (store `leandro-gym-fotos`, gru1) servidas por
+  `/api/body-photos/[id]`; registros antigos migram na primeira leitura; a página Corpo não embute
+  mais as imagens no HTML. (4) Bloqueio de login (5 erros/15 min por e-mail, 20 por IP) e limite
+  de pedidos de redefinição. (5) Recordes calculados em SQL (`DISTINCT ON`) — antes carregava
+  todas as séries. (6) Exportar CSV (treinos, dieta, peso, medidas) e excluir conta
+  (`/perfil/excluir-conta`). Migração `20260917160000_password_reset_and_throttle`. Validado no
+  banco local (39 verificações ponta a ponta) e Blob privado testado de verdade (403 sem token).
+  Obs.: formulário com `useActionState` + `.bind()` e página que chama função de arquivo
+  "use server" travava a resposta sem JS — token virou campo escondido e a checagem foi para
+  `services/password-reset.ts`.

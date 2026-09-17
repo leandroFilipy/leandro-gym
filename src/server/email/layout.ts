@@ -22,7 +22,7 @@ function appUrl(): string {
 }
 
 /** Envolve o conteúdo interno num layout dark responsivo (mobile-first). */
-export function emailLayout(opts: { title: string; preview?: string; bodyHtml: string; ctaText?: string; ctaHref?: string }): string {
+export function emailLayout(opts: { title: string; preview?: string; bodyHtml: string; ctaText?: string; ctaHref?: string; footerHtml?: string }): string {
   const cta =
     opts.ctaText && opts.ctaHref
       ? `<tr><td style="padding:8px 24px 28px;">
@@ -47,7 +47,7 @@ export function emailLayout(opts: { title: string; preview?: string; bodyHtml: s
         <tr><td style="padding:16px 24px 0;color:${FG};font-size:15px;line-height:1.55;">${opts.bodyHtml}</td></tr>
         ${cta}
         <tr><td style="padding:16px 24px 24px;border-top:1px solid ${LINE};color:${MUTED};font-size:12px;line-height:1.5;">
-          Você recebe este e-mail porque ativou os lembretes em <a href="${esc(appUrl())}/perfil" style="color:${ACCENT};">Perfil → Configurações</a>.
+          ${opts.footerHtml ?? `Você recebe este e-mail porque ativou os lembretes em <a href="${esc(appUrl())}/perfil" style="color:${ACCENT};">Perfil → Configurações</a>.`}
         </td></tr>
       </table>
     </td></tr>
