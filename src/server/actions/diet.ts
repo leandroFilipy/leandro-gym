@@ -9,7 +9,7 @@ import { isValidBarcode, normalizeBarcode, offProductToFood, type OffProduct } f
 import { FoodUnit, MealType } from "@/generated/prisma/enums";
 import type { Food } from "@/generated/prisma/client";
 import type { FoodOption } from "@/features/diet/types";
-import { estimatePlate, isPlateAiConfigured, type PlateEstimate } from "../ai/plate";
+import { estimatePlate, isPlateAiConfigured, PlateAiError, type PlateEstimate } from "../ai/plate";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const dateSchema = z.string().refine(isValidDateStr, "Data inválida");
@@ -254,7 +254,7 @@ export type PlateItem = PlateEstimate["items"][number];
 /** Analisa a foto (data URL já compactada no cliente) e devolve os itens estimados. Não grava nada. */
 export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionResult<{ items: PlateItem[]; note: string }>> {
   await requireUserId();
-  if (!isPlateAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta ANTHROPIC_API_KEY).");
+  if (!isPlateAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta GEMINI_API_KEY).");
   if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
   const m = DATA_URL.exec(dataUrl);
   if (!m) return fail("Formato de imagem inválido");
@@ -268,7 +268,7 @@ export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionRe
     return { ok: true, data: { items, note: r.note } };
   } catch (e) {
     console.error("[analyzePlatePhotoAction]", e);
-    return fail(e instanceof Error && e.message.startsWith("A IA") ? e.message : "Falha ao analisar a foto. Tente de novo.");
+    return fail(e instanceof PlateAiError ? e.message : "Falha ao analisar a foto. Tente de novo.");
   }
 }
 

@@ -79,7 +79,7 @@
 - [x] Trocar o dia do treino sem bagunçar a semana
 - [x] Compartilhar ficha por link (importar cópia)
 - [x] "O que eu como agora?" — sugestões para fechar a meta do dia
-- [x] Foto do prato com IA (Claude) — estimativa revisável antes de registrar
+- [x] Foto do prato com IA (Gemini, plano gratuito) — estimativa revisável antes de registrar
 
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
@@ -145,3 +145,6 @@
   troca de dia, importação, sugestões); a chamada real à IA não foi testada (sem chave).
   Obs.: o Postgres local do `prisma dev` (PGlite) falha com consultas em paralelo
   ("bind message supplies 2 parameters") — limitação só do ambiente local.
+- 2026-09-17 — Foto do prato migrada do Claude para o Google Gemini (`@google/genai`,
+  `gemini-3.8-flash`, plano gratuito) para não ter custo. Variável: `GEMINI_API_KEY`
+  (opcional `GEMINI_MODEL`). Erro 429 (limite gratuito) e chave inválida viram mensagens claras.

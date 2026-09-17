@@ -174,8 +174,10 @@ Sem as chaves VAPID, a UI informa que o recurso não está configurado.
 - **Ficha por link.** `WorkoutPlan.shareToken` (aleatório, 16 caracteres). `getSharedPlan(token)`
   é a **única leitura fora do escopo do usuário**: o token é a autorização e só a estrutura do
   treino é exposta. Desativar o link = `shareToken` null.
-- **Foto do prato.** `server/ai/plate.ts` usa o SDK `@anthropic-ai/sdk` (`claude-opus-5`, saída
-  estruturada via `betaZodOutputFormat`, `fallbacks: "default"`). A foto é compactada no cliente
+- **Foto do prato.** `server/ai/plate.ts` usa o SDK `@google/genai` (Gemini, padrão
+  `gemini-3.8-flash`, plano gratuito; `GEMINI_MODEL` troca o modelo) com `responseJsonSchema`
+  gerado do schema Zod e validação da resposta. Limite gratuito (429) vira mensagem amigável.
+  No plano gratuito o Google pode usar o conteúdo para melhorar produtos. A foto é compactada no cliente
   (1024px) e não é salva. Nada é registrado sem confirmação do usuário.
 
 ## Segurança
