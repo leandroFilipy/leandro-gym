@@ -20,9 +20,29 @@ export async function startSessionAction(workoutDayId: string) {
 
   const open = await db.workoutSession.findFirst({
     where: { userId, workoutDayId, date: today, finishedAt: null },
-    select: { id: true },
+    select: { id: true, exercises: { select: { exerciseId: true } } },
   });
-  if (open) redirect(`/treino/sessao/${open.id}`);
+  if (open) {
+    // Exercícios adicionados à ficha depois que o treino começou entram no fim da sessão.
+    const inSession = new Set(open.exercises.map((e) => e.exerciseId));
+    const missing = day.exercises.filter((e) => !inSession.has(e.exerciseId));
+    if (missing.length) {
+      await db.workoutExercise.createMany({
+        data: missing.map((e, i) => ({
+          sessionId: open.id,
+          exerciseId: e.exerciseId,
+          order: open.exercises.length + i + 1,
+          plannedSets: e.plannedSets,
+          repMin: e.repMin,
+          repMax: e.repMax,
+          restSeconds: e.restSeconds,
+          notes: e.notes,
+        })),
+      });
+      refreshApp();
+    }
+    redirect(`/treino/sessao/${open.id}`);
+  }
 
   const session = await db.workoutSession.create({
     data: {

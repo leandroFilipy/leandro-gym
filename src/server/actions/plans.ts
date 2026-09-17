@@ -110,17 +110,23 @@ export async function addDayExerciseAction(dayId: string, exerciseId: string): P
   if (!day || !exercise) return fail("Não encontrado");
 
   const last = await db.workoutDayExercise.findFirst({ where: { workoutDayId: dayId }, orderBy: { order: "desc" } });
+  const planned = { plannedSets: 3, repMin: 8, repMax: 12, restSeconds: settings.defaultRestSeconds };
   await db.workoutDayExercise.create({
-    data: {
-      workoutDayId: dayId,
-      exerciseId,
-      order: (last?.order ?? 0) + 1,
-      plannedSets: 3,
-      repMin: 8,
-      repMax: 12,
-      restSeconds: settings.defaultRestSeconds,
-    },
+    data: { workoutDayId: dayId, exerciseId, order: (last?.order ?? 0) + 1, ...planned },
   });
+
+  // Treino desse dia já em andamento: a sessão é uma cópia da ficha, então repassa o exercício novo.
+  const openSessions = await db.workoutSession.findMany({
+    where: { userId, workoutDayId: dayId, finishedAt: null, exercises: { none: { exerciseId } } },
+    select: { id: true, _count: { select: { exercises: true } } },
+  });
+  await Promise.all(
+    openSessions.map((s) =>
+      db.workoutExercise.create({
+        data: { sessionId: s.id, exerciseId, order: s._count.exercises + 1, ...planned },
+      }),
+    ),
+  );
   // Dia com exercício deixa de ser descanso automaticamente.
   await db.workoutDay.updateMany({
     where: { id: dayId, type: DayType.REST },
