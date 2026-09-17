@@ -87,6 +87,12 @@
 - [x] Lembrete push de registrar almoço/jantar
 - [x] Relatório mensal (salvar em PDF / compartilhar)
 
+## Fase 7 — Prontidão, compras e monitoramento
+- [x] Nota de prontidão antes do treino (sono, dor, energia) ajustando a carga sugerida
+- [x] Prontidão × desempenho no Progresso
+- [x] Lista de compras pela dieta registrada (checklist + compartilhar)
+- [x] Monitoramento de erros próprio (servidor, navegador e IA) com página e alerta push
+
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
   Registro inicial; os blocos seguintes foram implementados sem atualização deste arquivo.
@@ -191,3 +197,18 @@
   preenchidos (`offProductBasics`). (3) Leitor: câmera 1080p com foco contínuo, lanterna, ITF-14,
   ZXing com TRY_HARDER, "Foto do código" (decodifica foto) e dica após 7 s sem leitura.
   UPC-A/EAN-13 com zero à esquerda são tratados como o mesmo código.
+- 2026-09-17 — Fase 7: (1) Prontidão: ao abrir um treino sem séries, `ReadinessCheck` pergunta
+  sono/dor/energia (1–5) → `lib/domain/readiness.ts` (nota 0–100, pesos 40/25/35; < 45 baixa,
+  ≥ 75 alta). Colunas `readiness*` em `WorkoutSession`; `getGymSession` aplica
+  `adjustForReadiness` (baixa: não sobe e usa −10% da carga de trabalho; alta: incentiva recorde).
+  `GymSession` remonta via `key` ao responder. Card "Prontidão × desempenho" em `/progresso`
+  (`getReadinessInsight`: volume ÷ treino anterior do mesmo dia da ficha, dias ruins × bons).
+  (2) `/dieta/compras`: `lib/domain/shopping-list.ts` (média diária × dias da compra, só itens
+  comidos em ≥ 2 dias, arredonda 50 g / 0,1 kg / unidade, marca peso "pronto"); checklist em
+  localStorage e compartilhar. (3) Monitoramento: tabela `ErrorLog` + `server/monitoring/errors.ts`
+  (fingerprint normalizado, máx. 20/h por grupo, retenção 30 dias, push aos `ADMIN_EMAILS` no
+  primeiro do dia). Fontes: `src/instrumentation.ts` (`onRequestError`), `instrumentation-client.ts`
+  (window error/unhandledrejection → `/api/errors`), `error.tsx` em (app)/(focus) + `global-error.tsx`,
+  e erros da IA com as tentativas de cada modelo. Página `/perfil/erros` só para admins. Migração
+  `20260917180000_readiness_error_log`. Validado ponta a ponta no banco local (sugestão 66 → 58 kg
+  em dia ruim, insight, lista, agrupamento e limite). `typecheck`, `lint`, `test` (170) e `build` ok.

@@ -101,12 +101,15 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
 
         <EnergyCard tdee={settings.tdeeKcal} balance={energyBalance(settings.tdeeKcal, intakes)} />
 
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-3 gap-2 text-sm">
           <Link href="/dieta/alimentos" className="rounded-2xl border border-line bg-surface p-3 text-center text-muted hover:text-fg">
             Tabela de alimentos
           </Link>
           <Link href="/dieta/favoritas" className="rounded-2xl border border-line bg-surface p-3 text-center text-muted hover:text-fg">
             Refeições favoritas
+          </Link>
+          <Link href="/dieta/compras" className="rounded-2xl border border-line bg-surface p-3 text-center text-muted hover:text-fg">
+            🛒 Lista de compras
           </Link>
         </div>
       </div>

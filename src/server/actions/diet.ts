@@ -11,6 +11,7 @@ import type { Food } from "@/generated/prisma/client";
 import type { FoodOption } from "@/features/diet/types";
 import { AiError, isAiConfigured, parseImageDataUrl } from "../ai/gemini";
 import { readNutritionLabel } from "../ai/label";
+import { logError } from "../monitoring/errors";
 import { estimatePlate, type PlateEstimate } from "../ai/plate";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
@@ -260,7 +261,7 @@ export type PlateItem = PlateEstimate["items"][number];
 
 /** Analisa a foto (data URL já compactada no cliente) e devolve os itens estimados. Não grava nada. */
 export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionResult<{ items: PlateItem[]; note: string }>> {
-  await requireUserId();
+  const userId = await requireUserId();
   if (!isAiConfigured()) return fail("A análise por foto ainda não foi configurada (falta GEMINI_API_KEY).");
   if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
   const image = parseImageDataUrl(dataUrl);
@@ -275,13 +276,14 @@ export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionRe
     return { ok: true, data: { items, note: r.note } };
   } catch (e) {
     console.error("[analyzePlatePhotoAction]", e);
+    await logAiError(e, "analyzePlatePhotoAction", userId);
     return fail(e instanceof AiError ? e.message : "Falha ao analisar a foto. Tente de novo.");
   }
 }
 
 /** Foto da tabela nutricional → valores para pré-preencher o cadastro do alimento. Não grava nada. */
 export async function readNutritionLabelAction(dataUrl: string): Promise<ActionResult<FoodPrefill>> {
-  await requireUserId();
+  const userId = await requireUserId();
   if (!isAiConfigured()) return fail("A leitura por foto ainda não foi configurada (falta GEMINI_API_KEY).");
   if (dataUrl.length > 3_000_000) return fail("Foto muito grande");
   const image = parseImageDataUrl(dataUrl);
@@ -305,8 +307,15 @@ export async function readNutritionLabelAction(dataUrl: string): Promise<ActionR
     };
   } catch (e) {
     console.error("[readNutritionLabelAction]", e);
+    await logAiError(e, "readNutritionLabelAction", userId);
     return fail(e instanceof AiError ? e.message : "Falha ao ler a foto. Tente de novo.");
   }
+}
+
+/** Erros da IA são tratados (mensagem ao usuário), então não chegam ao onRequestError: registra aqui. */
+function logAiError(error: unknown, action: string, userId: string) {
+  const attempts = error instanceof AiError && error.attempts.length ? `\nTentativas:\n${error.attempts.join("\n")}` : "";
+  return logError({ source: "ai", error, path: action, userId, details: `${action}${attempts}` });
 }
 
 const plateItemsSchema = z.object({

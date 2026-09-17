@@ -12,8 +12,15 @@ function models(): string[] {
   return [...new Set([...(preferred ? [preferred] : []), ...FALLBACK_MODELS])];
 }
 
-/** Erro com mensagem pronta para mostrar ao usuário. */
-export class AiError extends Error {}
+/** Erro com mensagem pronta para mostrar ao usuário; `attempts` diz o que cada modelo respondeu. */
+export class AiError extends Error {
+  constructor(
+    message: string,
+    readonly attempts: string[] = [],
+  ) {
+    super(message);
+  }
+}
 
 export function isAiConfigured() {
   return Boolean(process.env.GEMINI_API_KEY);
@@ -33,6 +40,7 @@ export async function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { sys
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   let lastStatus: number | undefined;
   let quotaHit = false;
+  const attempts: string[] = [];
 
   for (const model of models()) {
     let text: string | undefined;
@@ -54,8 +62,9 @@ export async function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { sys
       text = response.text;
     } catch (e) {
       if (!(e instanceof ApiError)) throw e;
+      attempts.push(`${model}: ${e.status} ${e.message.slice(0, 300)}`);
       if ((e.status === 400 || e.status === 401 || e.status === 403) && /api[ _-]?key|permission|unauthori[sz]ed/i.test(e.message)) {
-        throw new AiError("Chave da IA (GEMINI_API_KEY) inválida ou sem permissão.");
+        throw new AiError("Chave da IA (GEMINI_API_KEY) inválida ou sem permissão.", attempts);
       }
       console.warn(`[gemini] ${model} falhou (${e.status}): ${e.message.slice(0, 200)}`);
       lastStatus = e.status;
@@ -65,11 +74,12 @@ export async function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { sys
 
     const parsed = text ? schema.safeParse(safeJson(text)) : null;
     if (parsed?.success) return parsed.data;
+    attempts.push(`${model}: JSON inválido ${(text ?? "(vazio)").slice(0, 200)}`);
     console.warn(`[gemini] ${model} devolveu JSON inválido`);
   }
 
-  if (quotaHit) throw new AiError("Limite gratuito da IA atingido por agora. Tente de novo mais tarde.");
-  throw new AiError(`A IA não respondeu${lastStatus ? ` (erro ${lastStatus})` : ""}. Tente de novo em instantes.`);
+  if (quotaHit) throw new AiError("Limite gratuito da IA atingido por agora. Tente de novo mais tarde.", attempts);
+  throw new AiError(`A IA não respondeu${lastStatus ? ` (erro ${lastStatus})` : ""}. Tente de novo em instantes.`, attempts);
 }
 
 function safeJson(text: string): unknown {

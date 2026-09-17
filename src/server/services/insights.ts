@@ -3,6 +3,8 @@ import { db } from "../db";
 import { getSettings } from "../session";
 import { addDays, fromDbDate, startOfIsoWeek, toDbDate, todayIn } from "@/lib/dates";
 import { analyzeMuscleVolume } from "@/lib/domain/muscle-volume";
+import { readinessImpact, type ReadinessSample } from "@/lib/domain/readiness";
+import { totalVolume } from "@/lib/domain/volume";
 import { detectStagnation, type ExerciseSessionLike, type StagnationResult } from "@/lib/domain/stagnation";
 import type { MuscleGroup } from "@/generated/prisma/enums";
 import { getActivePlan } from "./workouts";
@@ -109,4 +111,41 @@ export async function getWeeklyMuscleVolume(userId: string) {
   }
 
   return { weekStart: monday, hasPlan: Boolean(plan), rows: analyzeMuscleVolume(done, planned) };
+}
+
+// ───────────── Prontidão × desempenho ─────────────
+
+const READINESS_WINDOW_DAYS = 180;
+
+/**
+ * Para cada treino com prontidão respondida: volume ÷ volume do treino anterior do mesmo dia da
+ * ficha. Mostra se sono, dor e energia realmente mudam o rendimento.
+ */
+export async function getReadinessInsight(userId: string) {
+  const settings = await getSettings(userId);
+  const since = addDays(todayIn(settings.timezone), -READINESS_WINDOW_DAYS);
+  const sessions = await db.workoutSession.findMany({
+    where: { userId, finishedAt: { not: null }, workoutDayId: { not: null }, date: { gte: toDbDate(since) } },
+    orderBy: { startedAt: "asc" },
+    select: {
+      workoutDayId: true,
+      readinessScore: true,
+      exercises: { select: { sets: { where: { completed: true }, select: { weight: true, repetitions: true } } } },
+    },
+  });
+
+  const lastVolumeByDay = new Map<string, number>();
+  const samples: ReadinessSample[] = [];
+  let answered = 0;
+  for (const s of sessions) {
+    const volume = totalVolume(s.exercises.flatMap((e) => e.sets));
+    if (volume <= 0) continue;
+    const previous = lastVolumeByDay.get(s.workoutDayId!);
+    if (s.readinessScore !== null) {
+      answered++;
+      if (previous) samples.push({ score: s.readinessScore, volumeRatio: volume / previous });
+    }
+    lastVolumeByDay.set(s.workoutDayId!, volume);
+  }
+  return { answered, ...readinessImpact(samples) };
 }

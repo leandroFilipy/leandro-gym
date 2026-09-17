@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { db } from "../db";
 import { getSettings, requireUserId } from "../session";
 import { todayIn, toDbDate } from "@/lib/dates";
-import { fail, ok, refreshApp, type ActionResult } from "./_utils";
+import { readinessScore } from "@/lib/domain/readiness";
+import { fail, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 /** Inicia (ou retoma) o treino de um dia da ficha e abre o modo academia. */
 export async function startSessionAction(workoutDayId: string) {
@@ -97,6 +99,27 @@ export async function addExerciseToSessionAction(sessionId: string, exerciseId: 
       restSeconds: settings.defaultRestSeconds,
     },
   });
+  refreshApp();
+  return ok;
+}
+
+const readinessSchema = z
+  .object({ sleep: z.number().int().min(1).max(5), soreness: z.number().int().min(1).max(5), energy: z.number().int().min(1).max(5) })
+  .nullable();
+
+/** Prontidão do dia (ou null = pulou). Ajusta as sugestões de carga da sessão. */
+export async function saveReadinessAction(sessionId: string, input: z.input<typeof readinessSchema>): Promise<ActionResult> {
+  const userId = await requireUserId();
+  const { data, error } = validate(readinessSchema, input);
+  if (error !== undefined) return fail(error);
+
+  const r = await db.workoutSession.updateMany({
+    where: { id: sessionId, userId },
+    data: data
+      ? { readinessAskedAt: new Date(), readinessSleep: data.sleep, readinessSoreness: data.soreness, readinessEnergy: data.energy, readinessScore: readinessScore(data) }
+      : { readinessAskedAt: new Date() },
+  });
+  if (!r.count) return fail("Sessão não encontrada");
   refreshApp();
   return ok;
 }

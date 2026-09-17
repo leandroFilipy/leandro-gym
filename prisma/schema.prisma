@@ -35,6 +35,26 @@ model User {
   weeklyReports   WeeklyReport[]
   pushSubscriptions PushSubscription[]
   passwordResetTokens PasswordResetToken[]
+  errorLogs       ErrorLog[]
+}
+
+// Erros do servidor e do navegador (monitoramento próprio, sem serviço externo).
+// Agrupados por fingerprint; apagados após 30 dias.
+model ErrorLog {
+  id          String   @id @default(cuid())
+  source      String // server | client | action | ai
+  message     String   @db.Text
+  stack       String?  @db.Text
+  path        String?  @db.Text
+  digest      String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userAgent   String?  @db.Text
+  fingerprint String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([fingerprint, createdAt])
 }
 
 // Link de "esqueci minha senha". Só o hash (sha256) do token fica no banco.
@@ -220,6 +240,13 @@ model WorkoutSession {
   pausedAt     DateTime? // se preenchido, o treino está pausado desde este instante
   pausedSeconds Int       @default(0) // total acumulado de tempo pausado
   notes        String?
+
+  // Prontidão respondida ao abrir o treino (1–5 cada; soreness 5 = sem dor). Null = pulou.
+  readinessAskedAt  DateTime? // respondeu ou pulou: não pergunta de novo
+  readinessSleep    Int?
+  readinessSoreness Int?
+  readinessEnergy   Int?
+  readinessScore    Int? // 0–100 (lib/domain/readiness.ts)
 
   exercises WorkoutExercise[]
 

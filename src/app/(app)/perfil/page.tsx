@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { Bug, LogOut } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Badge, Card, CardHeader } from "@/components/ui/Card";
 import { AccountDataCard } from "@/features/profile/AccountDataCard";
 import { AutoGoalPreview } from "@/features/profile/AutoGoalPreview";
 import { GoalForm } from "@/features/profile/GoalForm";
@@ -12,6 +13,8 @@ import { fromDbDate, todayIn } from "@/lib/dates";
 import { ageFromBirthDate, computeNutritionGoalBreakdown, type NutritionGoalBreakdown } from "@/lib/domain/energy";
 import { logoutAction } from "@/server/actions/auth";
 import { db } from "@/server/db";
+import { isAdmin } from "@/server/monitoring/errors";
+import { countRecentErrors } from "@/server/services/errors";
 import { getSettings, requireUserId } from "@/server/session";
 import { getActiveGoal } from "@/server/services/nutrition";
 
@@ -20,11 +23,13 @@ export const metadata: Metadata = { title: "Perfil" };
 export default async function ProfilePage() {
   const userId = await requireUserId();
   const settings = await getSettings(userId);
-  const [user, goal, lastWeight] = await Promise.all([
+  const [user, goal, lastWeight, admin] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
     getActiveGoal(userId, todayIn(settings.timezone)),
     db.bodyWeight.findFirst({ where: { userId }, orderBy: { date: "desc" }, select: { weightKg: true } }),
+    isAdmin(userId),
   ]);
+  const recentErrors = admin ? await countRecentErrors() : 0;
 
   // Prévia do cálculo automático (TMB → TDEE → meta).
   const missing: string[] = [];
@@ -112,6 +117,17 @@ export default async function ProfilePage() {
             <strong className="text-fg">iPhone (Safari):</strong> compartilhar → &quot;Adicionar à Tela de Início&quot;.
           </p>
         </Card>
+
+        {admin && (
+          <Link href="/perfil/erros" className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 hover:border-accent">
+            <Bug className="size-5 text-accent" />
+            <span className="flex-1">
+              <span className="block font-semibold">Erros do app</span>
+              <span className="text-sm text-muted">{recentErrors === 0 ? "Nenhum nas últimas 24 h" : `${recentErrors} nas últimas 24 h`}</span>
+            </span>
+            {recentErrors > 0 && <Badge tone="danger">{recentErrors}</Badge>}
+          </Link>
+        )}
 
         <AccountDataCard />
 

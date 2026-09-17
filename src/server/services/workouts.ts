@@ -3,6 +3,7 @@ import { db } from "../db";
 import { getSettings } from "../session";
 import { addDays, fromDbDate, isoWeekday, startOfIsoWeek, toDbDate, todayIn, type DateStr } from "@/lib/dates";
 import { suggestProgression, type ProgressionSuggestion } from "@/lib/domain/progression";
+import { adjustForReadiness, readinessLevel } from "@/lib/domain/readiness";
 import { bestSet, totalVolume } from "@/lib/domain/volume";
 import type { MuscleGroup } from "@/generated/prisma/enums";
 import { bestSetsForExercises } from "./records";
@@ -210,6 +211,7 @@ export async function getGymSession(userId: string, sessionId: string) {
   });
   if (!session) return null;
   const settings = await getSettings(userId);
+  const readinessLevelToday = session.readinessScore !== null ? readinessLevel(session.readinessScore) : "normal";
 
   const exercises: GymExercise[] = await Promise.all(
     session.exercises.map(async (we) => {
@@ -228,14 +230,18 @@ export async function getGymSession(userId: string, sessionId: string) {
           .filter((s) => s.completed)
           .map((s) => ({ id: s.id, setNumber: s.setNumber, weight: s.weight, repetitions: s.repetitions, rir: s.rir })),
         previous,
-        suggestion: suggestProgression({
-          lastSets: previous?.sets ?? [],
-          plannedSets: we.plannedSets,
-          repMin: we.repMin,
-          repMax: we.repMax,
-          incrementKg: settings.weightIncrementKg,
-          stepKg: settings.weightStepKg,
-        }),
+        suggestion: adjustForReadiness(
+          suggestProgression({
+            lastSets: previous?.sets ?? [],
+            plannedSets: we.plannedSets,
+            repMin: we.repMin,
+            repMax: we.repMax,
+            incrementKg: settings.weightIncrementKg,
+            stepKg: settings.weightStepKg,
+          }),
+          readinessLevelToday,
+          { incrementKg: settings.weightIncrementKg, stepKg: settings.weightStepKg },
+        ),
       };
     }),
   );
@@ -248,6 +254,12 @@ export async function getGymSession(userId: string, sessionId: string) {
     finishedAt: session.finishedAt?.toISOString() ?? null,
     pausedAt: session.pausedAt?.toISOString() ?? null,
     pausedSeconds: session.pausedSeconds,
+    readiness: {
+      // Pergunta só em treino novo (sem séries) que ainda não respondeu nem pulou.
+      ask: session.readinessAskedAt === null && session.exercises.every((we) => we.sets.length === 0),
+      score: session.readinessScore,
+      level: session.readinessScore !== null ? readinessLevelToday : null,
+    },
     exercises,
     settings: {
       weightStepKg: settings.weightStepKg,

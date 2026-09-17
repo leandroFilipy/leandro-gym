@@ -16,6 +16,8 @@ export default async function SessionPage({ params }: PageProps<"/treino/sessao/
   const library = await listExercises(userId);
   return (
     <GymSession
+      // Remonta ao responder a prontidão: as sugestões de carga mudam com a nota.
+      key={session.readiness.ask ? "ask" : `r${session.readiness.score ?? "-"}`}
       session={session}
       library={library.map((e) => ({ id: e.id, name: e.name, muscleGroup: e.muscleGroup }))}
     />

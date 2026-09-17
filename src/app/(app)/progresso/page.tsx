@@ -10,8 +10,9 @@ import { fmtDayMonth, fmtInt } from "@/lib/format";
 import { MUSCLE_LABEL } from "@/lib/labels";
 import { requireUserId } from "@/server/session";
 import { getProgress, parseRange, RANGES } from "@/server/services/stats";
-import { getWeeklyMuscleVolume } from "@/server/services/insights";
+import { getReadinessInsight, getWeeklyMuscleVolume } from "@/server/services/insights";
 import { MuscleVolumeCard } from "@/features/workout/insights/MuscleVolumeCard";
+import { ReadinessCard } from "@/features/workout/insights/ReadinessCard";
 
 export const metadata: Metadata = { title: "Progresso" };
 
@@ -25,7 +26,7 @@ const LINKS = [
 export default async function ProgressPage({ searchParams }: PageProps<"/progresso">) {
   const userId = await requireUserId();
   const range = parseRange((await searchParams).r);
-  const [p, muscleVolume] = await Promise.all([getProgress(userId, range), getWeeklyMuscleVolume(userId)]);
+  const [p, muscleVolume, readiness] = await Promise.all([getProgress(userId, range), getWeeklyMuscleVolume(userId), getReadinessInsight(userId)]);
   const s = p.stats;
   const hasData = p.sessionSeries.length + p.weightSeries.length + p.nutritionSeries.length > 0;
 
@@ -64,6 +65,7 @@ export default async function ProgressPage({ searchParams }: PageProps<"/progres
         </Card>
 
         <MuscleVolumeCard rows={muscleVolume.rows} hasPlan={muscleVolume.hasPlan} />
+        <ReadinessCard insight={readiness} />
 
         {!hasData ? (
           <EmptyState title="Sem dados no período" text="Registre treinos, peso e dieta para ver os gráficos." />

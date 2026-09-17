@@ -16,6 +16,7 @@ import { Elapsed } from "./Elapsed";
 import { ExerciseChips } from "./ExerciseChips";
 import { FinishSheet } from "./FinishSheet";
 import { useOutboxPending, useWakeLock } from "./hooks";
+import { ReadinessCheck } from "./ReadinessCheck";
 import { RecordToast, type RecordToastData } from "./RecordToast";
 import { RestView, type RestState } from "./RestView";
 import { SetLogger, type Draft } from "./SetLogger";
@@ -39,6 +40,9 @@ function defaultsFor(ex: GymExercise | undefined): Draft {
 }
 
 const isDone = (e: GymExercise) => e.sets.length >= e.plannedSets;
+const allSetsCount = (list: GymExercise[]) => list.reduce((n, e) => n + e.sets.length, 0);
+
+const READINESS_TONE = { low: "text-warn", normal: "text-muted", high: "text-success" } as const;
 
 function firstIncomplete(list: GymExercise[]): number {
   const i = list.findIndex((e) => !isDone(e));
@@ -97,6 +101,7 @@ export function GymSession({ session, library }: Props) {
     }
   }
 
+  const askReadiness = session.readiness.ask && allSetsCount(exercises) === 0;
   const current = exercises[idx];
   const allSets = exercises.flatMap((e) => e.sets);
   const allDone = exercises.length > 0 && exercises.every(isDone);
@@ -170,7 +175,10 @@ export function GymSession({ session, library }: Props) {
           <div className="text-xs text-muted">
             <Elapsed since={session.startedAt} pausedSeconds={session.pausedSeconds} pausedAt={pausedAt} />
             {" · "}{allSets.length} séries
-            {paused && <span className="ml-2 font-semibold text-warn">⏸ pausado</span>}
+            {session.readiness.level && session.readiness.score !== null && (
+              <span className={`ml-2 font-semibold ${READINESS_TONE[session.readiness.level]}`}>prontidão {session.readiness.score}</span>
+            )}
+            {paused &&<span className="ml-2 font-semibold text-warn">⏸ pausado</span>}
             {pending > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 text-warn">
                 <CloudOff className="size-3" /> {pending} pendente(s)
@@ -193,7 +201,9 @@ export function GymSession({ session, library }: Props) {
       )}
 
       <div className="flex flex-1 flex-col pb-40 pt-2">
-        {paused ? (
+        {askReadiness ? (
+          <ReadinessCheck sessionId={session.id} />
+        ) : paused ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
             <div className="grid size-20 place-items-center rounded-full border border-warn/40 bg-warn/10 text-warn">
               <Pause className="size-9" />
@@ -244,7 +254,7 @@ export function GymSession({ session, library }: Props) {
       </div>
 
       {/* Ação principal fixa na zona do polegar */}
-      {!rest && !paused && current && (
+      {!askReadiness && !rest && !paused && current && (
         <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-4 pt-3 backdrop-blur">
           <div className="mx-auto max-w-lg pb-3">
             <Button size="xl" block onClick={completeSet}>
