@@ -39,20 +39,31 @@ export async function getDayGoal(userId: string, date: DateStr) {
 }
 
 export async function getDiary(userId: string, date: DateStr) {
-  const meals = await db.meal.findMany({
-    where: { userId, date: toDbDate(date) },
-    include: {
-      foods: { orderBy: { createdAt: "asc" }, include: { food: { select: { name: true, unit: true } } } },
-    },
-  });
+  const [meals, previousMeals] = await Promise.all([
+    db.meal.findMany({
+      where: { userId, date: toDbDate(date) },
+      include: {
+        foods: { orderBy: { createdAt: "asc" }, include: { food: { select: { name: true, unit: true } } } },
+      },
+    }),
+    // Dia anterior: atalho "repetir de ontem" nas refeições vazias.
+    db.meal.findMany({
+      where: { userId, date: toDbDate(addDays(date, -1)), foods: { some: {} } },
+      select: { type: true, foods: { select: { kcal: true, food: { select: { name: true } } } } },
+    }),
+  ]);
   const { goal, dayKind, carbsDelta } = await getDayGoal(userId, date);
 
   const byType = MEAL_TYPES.map((type) => {
     const meal = meals.find((m) => m.type === type);
     const items = meal?.foods ?? [];
+    const prev = previousMeals.find((m) => m.type === type);
     return {
       type,
       mealId: meal?.id ?? null,
+      previous: prev
+        ? { count: prev.foods.length, kcal: prev.foods.reduce((n, f) => n + f.kcal, 0), names: prev.foods.map((f) => f.food.name) }
+        : null,
       items: items.map((i) => ({
         id: i.id,
         name: i.food.name,

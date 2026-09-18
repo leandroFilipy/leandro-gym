@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
-import { Plus, Star } from "lucide-react";
+import { Plus, Repeat, Star } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { fmtInt, fmtNumber } from "@/lib/format";
 import { MEAL_LABEL, MEAL_TYPES, UNIT_LABEL } from "@/lib/labels";
-import { saveMealAsFavoriteAction } from "@/server/actions/diet";
+import { repeatPreviousMealAction, saveMealAsFavoriteAction } from "@/server/actions/diet";
 import type { MealType } from "@/generated/prisma/enums";
 import { AddFoodSheet } from "./AddFoodSheet";
 import { EditItemSheet } from "./EditItemSheet";
@@ -42,6 +42,12 @@ export function DietDiary({ date, meals, foods, frequentIds, favorites }: Props)
       alert(r.ok ? `"${name}" salva nas favoritas ⭐` : r.error);
     });
   };
+
+  const repeat = (type: MealType) =>
+    start(async () => {
+      const r = await repeatPreviousMealAction(date, type);
+      if (!r.ok) alert(r.error);
+    });
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,6 +86,22 @@ export function DietDiary({ date, meals, foods, frequentIds, favorites }: Props)
                 </li>
               ))}
             </ul>
+          ) : meal.previous ? (
+            <div className="px-4 pb-3 pt-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => repeat(meal.type)}
+                className="flex w-full items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2 text-left hover:border-accent disabled:opacity-60"
+              >
+                <Repeat className="size-4 shrink-0 text-accent" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">Repetir de ontem</span>
+                  <span className="block truncate text-xs text-muted">{meal.previous.names.join(" · ")}</span>
+                </span>
+                <span className="tabular shrink-0 text-xs text-muted">{fmtInt(meal.previous.kcal)} kcal</span>
+              </button>
+            </div>
           ) : (
             <div className="px-4 pb-3 pt-1 text-sm text-faint">Nada registrado</div>
           )}

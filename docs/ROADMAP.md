@@ -93,6 +93,12 @@
 - [x] Lista de compras pela dieta registrada (checklist + compartilhar)
 - [x] Monitoramento de erros próprio (servidor, navegador e IA) com página e alerta push
 
+## Fase 8 — Hábitos do dia
+- [x] Água: card na home e na dieta (+250/+500 ml), meta pelo peso ou manual, lembrete push
+- [x] "Repetir de ontem" nas refeições vazias do diário
+- [ ] Cardápio da semana (adiado — tabela ainda não criada)
+- [ ] Desafio semanal entre amigos (adiado — tabela ainda não criada)
+
 ## Log
 - 2026-09-11 — Fundação, schema, auth config, regras de domínio e serviços de leitura.
   Registro inicial; os blocos seguintes foram implementados sem atualização deste arquivo.
@@ -212,3 +218,4 @@
   e erros da IA com as tentativas de cada modelo. Página `/perfil/erros` só para admins. Migração
   `20260917180000_readiness_error_log`. Validado ponta a ponta no banco local (sugestão 66 → 58 kg
   em dia ruim, insight, lista, agrupamento e limite). `typecheck`, `lint`, `test` (170) e `build` ok.
+- 2026-09-18 — Água e "repetir de ontem". Cardápio e desafio tirados da migration para não criar tabelas sem uso.

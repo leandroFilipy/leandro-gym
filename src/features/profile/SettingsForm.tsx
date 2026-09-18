@@ -20,6 +20,8 @@ export interface SettingsValues {
   carbCyclingEnabled: boolean;
   restDayCarbsCut: number;
   mealRemindersEnabled: boolean;
+  waterRemindersEnabled: boolean;
+  waterGoalMl: number | null;
   timezone: string;
   dailyEmailEnabled: boolean;
   dailyEmailTime: string;
@@ -156,6 +158,24 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           description="Notificação push ~13h30 se o almoço estiver vazio e ~21h se o jantar estiver vazio (requer push ativado)"
           name="mealRemindersEnabled"
           defaultChecked={values.mealRemindersEnabled}
+        />
+        <Toggle
+          label="Lembrete de beber água"
+          description="Notificação push ~13h30 e ~21h se você estiver bem abaixo do esperado para a hora (requer push ativado)"
+          name="waterRemindersEnabled"
+          defaultChecked={values.waterRemindersEnabled}
+        />
+        <Field
+          label="Meta de água por dia (ml)"
+          hint="vazio = automático, 35 ml por kg"
+          name="waterGoalMl"
+          type="number"
+          inputMode="numeric"
+          min={500}
+          max={8000}
+          step={50}
+          defaultValue={values.waterGoalMl ?? ""}
+          placeholder="Ex.: 3000"
         />
         <SelectField label="Fuso horário" name="timezone" defaultValue={values.timezone}>
           {zones.map((z) => (

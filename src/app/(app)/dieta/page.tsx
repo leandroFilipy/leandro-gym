@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/Card";
 import { DietDiary } from "@/features/diet/DietDiary";
 import { EnergyCard } from "@/features/diet/EnergyCard";
 import { GoalBars } from "@/features/diet/GoalBars";
+import { WaterCard } from "@/features/diet/WaterCard";
 import { WhatToEatCard } from "@/features/diet/WhatToEatCard";
+import { getWaterDay } from "@/server/services/water";
 import { addDays, hourIn, isValidDateStr, todayIn } from "@/lib/dates";
 import { energyBalance } from "@/lib/domain/energy";
 import { mealTarget, remainingMacros } from "@/lib/domain/meal-suggestions";
@@ -24,13 +26,14 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
   const { d } = await searchParams;
   const date = typeof d === "string" && isValidDateStr(d) ? d : today;
 
-  const [diary, foods, frequent, favorites, intakes] = await Promise.all([
+  const [diary, foods, frequent, favorites, intakes, water] = await Promise.all([
     getDiary(userId, date),
     listFoods(userId),
     listFrequentFoods(userId),
     listFavorites(userId),
     // últimos 7 dias completos (hoje ainda está incompleto)
     getIntakeSeries(userId, addDays(today, -1), 7),
+    getWaterDay(userId, date),
   ]);
 
   const label = date === today ? "Hoje" : date === addDays(today, -1) ? "Ontem" : fmtFullDate(date);
@@ -98,6 +101,8 @@ export default async function DietPage({ searchParams }: PageProps<"/dieta">) {
           frequentIds={frequent.map((f) => f.id)}
           favorites={favorites}
         />
+
+        <WaterCard date={date} ml={water.ml} goalMl={water.goalMl} auto={water.auto} />
 
         <EnergyCard tdee={settings.tdeeKcal} balance={energyBalance(settings.tdeeKcal, intakes)} />
 

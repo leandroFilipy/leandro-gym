@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { db } from "../db";
 import { getSettings, requireUserId } from "../session";
-import { isValidDateStr, todayIn, toDbDate } from "@/lib/dates";
+import { addDays, isValidDateStr, todayIn, toDbDate } from "@/lib/dates";
 import { scaleMacros } from "@/lib/domain/nutrition";
 import { barcodeVariants, isValidBarcode, normalizeBarcode, offProductBasics, offProductToFood, type FoodPrefill, type OffProduct } from "@/lib/domain/barcode";
 import { FoodUnit, MealType } from "@/generated/prisma/enums";
@@ -98,6 +98,27 @@ export async function updateMealFoodAction(id: string, quantity: number): Promis
 export async function removeMealFoodAction(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
   await db.mealFood.deleteMany({ where: { id, meal: { userId } } });
+  refreshApp();
+  return ok;
+}
+
+/** Copia a mesma refeição do dia anterior (macros recalculados pelo cadastro atual do alimento). */
+export async function repeatPreviousMealAction(date: string, mealType: MealType): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!isValidDateStr(date)) return fail("Data inválida");
+  const parsedType = z.enum(MealType).safeParse(mealType);
+  if (!parsedType.success) return fail("Refeição inválida");
+
+  const previous = await db.meal.findFirst({
+    where: { userId, date: toDbDate(addDays(date, -1)), type: parsedType.data },
+    include: { foods: { orderBy: { createdAt: "asc" }, include: { food: true } } },
+  });
+  if (!previous?.foods.length) return fail("Nada registrado nessa refeição ontem");
+
+  const meal = await getOrCreateMeal(userId, date, parsedType.data);
+  await db.mealFood.createMany({
+    data: previous.foods.map((f) => ({ mealId: meal.id, foodId: f.foodId, quantity: f.quantity, ...scaleMacros(f.food, f.quantity) })),
+  });
   refreshApp();
   return ok;
 }

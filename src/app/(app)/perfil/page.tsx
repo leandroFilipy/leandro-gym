@@ -96,6 +96,8 @@ export default async function ProfilePage() {
               carbCyclingEnabled: settings.carbCyclingEnabled,
               restDayCarbsCut: settings.restDayCarbsCut,
               mealRemindersEnabled: settings.mealRemindersEnabled,
+              waterRemindersEnabled: settings.waterRemindersEnabled,
+              waterGoalMl: settings.waterGoalMl,
               timezone: settings.timezone,
               dailyEmailEnabled: settings.dailyEmailEnabled,
               dailyEmailTime: settings.dailyEmailTime,

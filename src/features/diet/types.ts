@@ -29,6 +29,8 @@ export interface DiaryItem extends Macros {
 export interface DiaryMeal {
   type: MealType;
   mealId: string | null;
+  /** Mesma refeição no dia anterior (para "repetir de ontem"). */
+  previous: { count: number; kcal: number; names: string[] } | null;
   items: DiaryItem[];
   totals: Macros;
 }

@@ -4,6 +4,7 @@ import { Card, CardHeader, Stat } from "@/components/ui/Card";
 import { WeightChangeText } from "@/features/body/WeightChangeText";
 import { WeightQuickForm } from "@/features/body/WeightQuickForm";
 import { GoalBars } from "@/features/diet/GoalBars";
+import { WaterCard } from "@/features/diet/WaterCard";
 import { fmtSet } from "@/features/workout/format";
 import { TodayWorkoutCard } from "@/features/workout/TodayWorkoutCard";
 import { MuscleVolumeCard } from "@/features/workout/insights/MuscleVolumeCard";
@@ -62,6 +63,8 @@ export default async function HomePage() {
           <GoalBars totals={d.totals} goal={d.goal} compact />
         </Card>
       </Link>
+
+      <WaterCard date={d.today} ml={d.water.ml} goalMl={d.water.goalMl} auto={d.water.auto} />
 
       {!w.todayEntry && (
         <Card>
