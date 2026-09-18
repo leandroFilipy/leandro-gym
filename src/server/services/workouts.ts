@@ -144,11 +144,13 @@ export async function getToday(userId: string) {
   const session = await db.workoutSession.findFirst({
     where: { userId, date: toDbDate(today) },
     orderBy: { startedAt: "desc" },
-    select: { id: true, finishedAt: true, name: true },
+    select: { id: true, finishedAt: true, name: true, workoutDayId: true, _count: { select: { exercises: { where: { sets: { some: { completed: true } } } } } } },
   });
 
   const nextDay = plan ? findNextWorkoutDay(plan.days, weekday) : null;
-  return { today, weekday, plan, day, session, nextDay };
+  // Sessão aberta sem nenhuma série feita ainda pode ser trocada por outro dia da ficha.
+  const started = Boolean(session && (session.finishedAt || session._count.exercises > 0));
+  return { today, weekday, plan, day, session, started, nextDay };
 }
 
 function findNextWorkoutDay<T extends { weekday: number; type: string }>(days: T[], weekday: number) {

@@ -10,6 +10,7 @@ interface Day {
   name: string;
   status: DayStatus;
   sessionId: string | null;
+  dayId?: string | null;
   doneOn?: number | null;
 }
 
@@ -43,6 +44,7 @@ export function WeekCalendar({ days }: { days: Day[] }) {
               {d.name}
               {d.doneOn && <span className="text-xs text-muted"> · feito {WEEKDAY_SHORT[d.doneOn].toLowerCase()}</span>}
             </span>
+            {d.status === "missed" && d.dayId && <span className="text-xs font-semibold text-accent">Fazer hoje</span>}
             <StatusIcon status={d.status} />
           </>
         );
@@ -54,6 +56,11 @@ export function WeekCalendar({ days }: { days: Day[] }) {
           <li key={d.date}>
             {d.sessionId ? (
               <Link href={`/treino/sessao/${d.sessionId}/resumo`} className={cls}>
+                {content}
+              </Link>
+            ) : d.dayId && d.status !== "rest" ? (
+              // Dia perdido ou futuro: abre o treino, que tem "Fazer este treino hoje".
+              <Link href={`/treino/dia/${d.dayId}`} className={cn(cls, "hover:border-accent")}>
                 {content}
               </Link>
             ) : (

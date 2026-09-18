@@ -12,7 +12,7 @@ type Today = Awaited<ReturnType<typeof getToday>>;
 
 /** Card "TREINO DE HOJE" com o botão principal. Usado na Home e em /treino. */
 export function TodayWorkoutCard({ today, showExercises = false }: { today: Today; showExercises?: boolean }) {
-  const { plan, day, session, nextDay } = today;
+  const { plan, day, session, started, nextDay } = today;
 
   if (!plan) {
     return (
@@ -30,7 +30,9 @@ export function TodayWorkoutCard({ today, showExercises = false }: { today: Toda
   const isRest = !day || day.type === "REST";
   const hasExercises = Boolean(day && day.exercises.length > 0);
   // Trocar o treino de hoje por outro dia da ficha (ex.: faltou segunda, faz na terça).
-  const swapDays = session ? [] : plan.days.filter((d) => d.id !== day?.id && d.type !== "REST" && d.exercises.length > 0);
+  // Liberado enquanto nenhuma série foi feita hoje, mesmo que o treino já tenha sido aberto.
+  const currentDayId = session ? session.workoutDayId : day?.id;
+  const swapDays = started ? [] : plan.days.filter((d) => d.id !== currentDayId && d.type !== "REST" && d.exercises.length > 0);
 
   return (
     <Card className={isRest ? "" : "border-l-4 border-l-accent"}>

@@ -46,6 +46,11 @@ export async function startSessionAction(workoutDayId: string) {
     redirect(`/treino/sessao/${open.id}`);
   }
 
+  // Troca de dia: o treino aberto hoje sem nenhuma série feita é descartado.
+  await db.workoutSession.deleteMany({
+    where: { userId, date: today, finishedAt: null, exercises: { none: { sets: { some: { completed: true } } } } },
+  });
+
   const session = await db.workoutSession.create({
     data: {
       userId,
