@@ -13,6 +13,8 @@ import { getProgress, parseRange, RANGES } from "@/server/services/stats";
 import { getReadinessInsight, getWeeklyMuscleVolume } from "@/server/services/insights";
 import { MuscleVolumeCard } from "@/features/workout/insights/MuscleVolumeCard";
 import { ReadinessCard } from "@/features/workout/insights/ReadinessCard";
+import { TrainingHeatmapCard } from "@/features/workout/insights/TrainingHeatmapCard";
+import { getTrainingHeatmap } from "@/server/services/training-heatmap";
 
 export const metadata: Metadata = { title: "Progresso" };
 
@@ -26,7 +28,12 @@ const LINKS = [
 export default async function ProgressPage({ searchParams }: PageProps<"/progresso">) {
   const userId = await requireUserId();
   const range = parseRange((await searchParams).r);
-  const [p, muscleVolume, readiness] = await Promise.all([getProgress(userId, range), getWeeklyMuscleVolume(userId), getReadinessInsight(userId)]);
+  const [p, muscleVolume, readiness, heatmap] = await Promise.all([
+    getProgress(userId, range),
+    getWeeklyMuscleVolume(userId),
+    getReadinessInsight(userId),
+    getTrainingHeatmap(userId),
+  ]);
   const s = p.stats;
   const hasData = p.sessionSeries.length + p.weightSeries.length + p.nutritionSeries.length > 0;
 
@@ -64,6 +71,7 @@ export default async function ProgressPage({ searchParams }: PageProps<"/progres
           <Stat label="Volume semanal" value={`${fmtInt(s.avgWeeklyVolume)}`} sub="kg (média)" />
         </Card>
 
+        <TrainingHeatmapCard data={heatmap} />
         <MuscleVolumeCard rows={muscleVolume.rows} hasPlan={muscleVolume.hasPlan} />
         <ReadinessCard insight={readiness} />
 

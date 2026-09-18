@@ -96,6 +96,8 @@
 ## Fase 8 — Hábitos do dia
 - [x] Água: card na home e na dieta (+250/+500 ml), meta pelo peso ou manual, lembrete push
 - [x] "Repetir de ontem" nas refeições vazias do diário
+- [x] Trocar dia com treino aberto sem séries; dia perdido do calendário abre "Fazer hoje"
+- [x] Frequência no ano (quadriculado por dia, nível pelas séries, sequência de semanas) no Progresso
 - [ ] Cardápio da semana (adiado — tabela ainda não criada)
 - [ ] Desafio semanal entre amigos (adiado — tabela ainda não criada)
 
