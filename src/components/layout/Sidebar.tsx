@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { isActive, NAV_ITEMS } from "./nav-items";
+import { isActive, SIDEBAR_ITEMS } from "./nav-items";
 import { Wordmark } from "./Wordmark";
 
 export function Sidebar() {
@@ -14,7 +14,7 @@ export function Sidebar() {
         <Wordmark />
       </Link>
       <nav className="flex flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {SIDEBAR_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
             <Link

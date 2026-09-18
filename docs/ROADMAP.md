@@ -106,6 +106,8 @@
       `docs/NOTIFICACOES.md`): refeição, água, cobrança da noite (treino faltado, proteína), platô no push do
       treino do dia e "Recado do patrão" no resumo (elogio ou "voltou depois de sumir")
 - [x] Timelapse das fotos por pose (player + vídeo para compartilhar via MediaRecorder)
+- [x] Aba Corpo (no lugar do Perfil na barra de baixo; Perfil virou ícone na Home): mapa muscular frente/costas
+      pintado pelas séries do período (hoje / semana / 30 dias × faixa semanal), detalhe por músculo e tabela
 - [ ] Patentes gaúchas (Guri → Monarca do Pampa), patente por exercício, histórico — frases de "perto de cair" e "rebaixado" já prontas
 - [ ] Cardápio da semana (adiado — tabela ainda não criada)
 - [ ] Desafio semanal entre amigos (adiado — tabela ainda não criada)

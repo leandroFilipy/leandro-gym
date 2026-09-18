@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { Trophy, User } from "lucide-react";
 import { Card, CardHeader, Stat } from "@/components/ui/Card";
 import { WeightChangeText } from "@/features/body/WeightChangeText";
 import { WeightQuickForm } from "@/features/body/WeightQuickForm";
@@ -21,7 +21,10 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="mb-2">
+      <header className="relative mb-2 pr-12 md:pr-0">
+        <Link href="/perfil" aria-label="Perfil e configurações" className="absolute right-0 top-0 grid size-10 place-items-center rounded-full border border-line text-muted hover:text-fg md:hidden">
+          <User className="size-5" />
+        </Link>
         <p className="eyebrow">
           {WEEKDAY_LONG[d.todayInfo.weekday]} · {fmtDayMonth(d.today)}
         </p>
