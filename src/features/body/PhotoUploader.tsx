@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Camera } from "lucide-react";
+import { Camera, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
@@ -9,10 +9,15 @@ import { compactImageSizes } from "@/lib/image";
 import { POSE_LABEL, POSES } from "@/lib/labels";
 import { saveBodyPhotoAction } from "@/server/actions/body";
 import type { PhotoPose } from "@/generated/prisma/enums";
+import { GuidedCamera } from "./GuidedCamera";
 
-/** Escolhe data + pose e envia a foto (compactada no aparelho em 2 tamanhos). */
-export function PhotoUploader({ today }: { today: string }) {
+/**
+ * Escolhe data + pose e envia a foto (compactada no aparelho em 2 tamanhos). A câmera com guia
+ * mostra a última foto da mesma pose por cima, para repetir posição e distância.
+ */
+export function PhotoUploader({ today, lastByPose }: { today: string; lastByPose: Partial<Record<PhotoPose, string>> }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [date, setDate] = useState(today);
   const [pose, setPose] = useState<PhotoPose>("FRONT");
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -48,9 +53,25 @@ export function PhotoUploader({ today }: { today: string }) {
           </div>
         </div>
       </div>
-      <Button block size="lg" variant="secondary" disabled={pending} onClick={() => inputRef.current?.click()}>
-        <Camera className="size-5" /> {pending ? "Enviando…" : "Tirar / escolher foto"}
-      </Button>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <Button size="lg" disabled={pending} onClick={() => setCameraOpen(true)}>
+          <Camera className="size-5" /> {pending ? "Enviando…" : lastByPose[pose] ? "Câmera com guia" : "Tirar foto"}
+        </Button>
+        <Button size="lg" variant="secondary" disabled={pending} onClick={() => inputRef.current?.click()} aria-label="Escolher foto da galeria">
+          <ImageIcon className="size-5" />
+        </Button>
+      </div>
+      {cameraOpen && (
+        <GuidedCamera
+          ghostUrl={lastByPose[pose] ?? null}
+          poseLabel={POSE_LABEL[pose]}
+          onClose={() => setCameraOpen(false)}
+          onCapture={(file) => {
+            setCameraOpen(false);
+            upload(file);
+          }}
+        />
+      )}
       <input
         ref={inputRef}
         type="file"

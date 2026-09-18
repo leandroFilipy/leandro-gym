@@ -9,6 +9,7 @@ import { fmtSet } from "@/features/workout/format";
 import { TodayWorkoutCard } from "@/features/workout/TodayWorkoutCard";
 import { MuscleVolumeCard } from "@/features/workout/insights/MuscleVolumeCard";
 import { StagnationCard } from "@/features/workout/insights/StagnationCard";
+import { ForgottenMusclesCard } from "@/features/workout/insights/ForgottenMusclesCard";
 import { fmtDayMonth, fmtInt, fmt1, WEEKDAY_LONG } from "@/lib/format";
 import { requireUserId } from "@/server/session";
 import { getDashboard } from "@/server/services/dashboard";
@@ -54,6 +55,7 @@ export default async function HomePage() {
       </div>
 
       <StagnationCard alerts={d.stagnation} />
+      <ForgottenMusclesCard muscles={d.forgotten} />
 
       <MuscleVolumeCard rows={d.muscleVolume.rows} hasPlan={d.muscleVolume.hasPlan} title="Volume da semana" href="/progresso" />
 

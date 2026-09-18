@@ -98,6 +98,10 @@
 - [x] "Repetir de ontem" nas refeições vazias do diário
 - [x] Trocar dia com treino aberto sem séries; dia perdido do calendário abre "Fazer hoje"
 - [x] Frequência no ano (quadriculado por dia, nível pelas séries, sequência de semanas) no Progresso
+- [x] Músculo esquecido: grupo da ficha sem série há 10+ dias (card na Home)
+- [x] Refeição por voz/texto: Web Speech pt-BR → Gemini estima itens → mesma revisão da foto do prato
+- [x] Câmera com guia nas fotos do corpo: última foto da pose semitransparente, temporizador, trocar câmera
+- [x] Atalhos do ícone (Treino, Água, Refeição, Peso) + tela rápida `/agua` (PWA não tem widget de tela inicial)
 - [ ] Cardápio da semana (adiado — tabela ainda não criada)
 - [ ] Desafio semanal entre amigos (adiado — tabela ainda não criada)
 

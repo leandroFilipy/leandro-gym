@@ -2,7 +2,7 @@ import "server-only";
 import { ApiError, GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 
-// Cliente compartilhado do Google Gemini (plano gratuito) para leituras com visão.
+// Cliente compartilhado do Google Gemini (plano gratuito) para leituras de foto e de texto.
 // Se o modelo principal não existir, estiver sobrecarregado ou sem cota, tenta os próximos.
 
 const FALLBACK_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"];
@@ -36,8 +36,17 @@ export function parseImageDataUrl(dataUrl: string): ImageInput | null {
   return m ? { mediaType: m[1] as ImageInput["mediaType"], base64: m[2] } : null;
 }
 
-export async function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { system: string; prompt: string; image: ImageInput }): Promise<T> {
+export function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { system: string; prompt: string; image: ImageInput }): Promise<T> {
+  return generateJson(schema, opts);
+}
+
+export function generateJsonFromText<T>(schema: z.ZodType<T>, opts: { system: string; prompt: string }): Promise<T> {
+  return generateJson(schema, opts);
+}
+
+async function generateJson<T>(schema: z.ZodType<T>, opts: { system: string; prompt: string; image?: ImageInput }): Promise<T> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const imagePart = opts.image ? [{ inlineData: { mimeType: opts.image.mediaType, data: opts.image.base64 } }] : [];
   let lastStatus: number | undefined;
   let quotaHit = false;
   const attempts: string[] = [];
@@ -50,7 +59,7 @@ export async function generateJsonFromImage<T>(schema: z.ZodType<T>, opts: { sys
         contents: [
           {
             role: "user",
-            parts: [{ inlineData: { mimeType: opts.image.mediaType, data: opts.image.base64 } }, { text: opts.prompt }],
+            parts: [...imagePart, { text: opts.prompt }],
           },
         ],
         config: {

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Camera, ChevronLeft, ImageIcon, ScanBarcode, Star } from "lucide-react";
+import { Camera, ChevronLeft, ImageIcon, Mic, ScanBarcode, Star } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { Stepper } from "@/components/ui/Stepper";
@@ -19,6 +19,7 @@ import { BarcodeScanner } from "./BarcodeScanner";
 import { FoodForm } from "./FoodForm";
 import { MacroLine } from "./MacroLine";
 import { PlatePhoto } from "./PlatePhoto";
+import { VoiceMeal } from "./VoiceMeal";
 import type { FavoriteOption, FoodOption } from "./types";
 
 interface Props {
@@ -40,7 +41,9 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   // Leitor de código de barras: desligado, câmera aberta ou produto não encontrado (cadastro).
-  const [scan, setScan] = useState<{ mode: "off" } | { mode: "camera" } | { mode: "photo" } | { mode: "not_found"; barcode: string; prefill: FoodPrefill | null }>({ mode: "off" });
+  const [scan, setScan] = useState<
+    { mode: "off" } | { mode: "camera" } | { mode: "photo" } | { mode: "voice" } | { mode: "not_found"; barcode: string; prefill: FoodPrefill | null }
+  >({ mode: "off" });
   const [scanNote, setScanNote] = useState<string | null>(null);
   const [lookingUp, startLookup] = useTransition();
 
@@ -178,6 +181,13 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
           </button>
           <PlatePhoto date={date} mealType={mealType} onDone={close} />
         </div>
+      ) : scan.mode === "voice" ? (
+        <div className="flex flex-col gap-3">
+          <button type="button" onClick={() => setScan({ mode: "off" })} className="flex items-center gap-1 self-start text-sm text-muted">
+            <ChevronLeft className="size-4" /> Voltar
+          </button>
+          <VoiceMeal date={date} mealType={mealType} onDone={close} />
+        </div>
       ) : scan.mode === "not_found" ? (
         <div className="flex flex-col gap-3">
           <button type="button" onClick={() => setScan({ mode: "camera" })} className="flex items-center gap-1 self-start text-sm text-muted">
@@ -224,6 +234,9 @@ export function AddFoodSheet({ open, onClose, date, mealType, foods, frequentIds
                 </Button>
                 <Button variant="secondary" aria-label="Foto do prato (IA)" onClick={() => { setError(null); setScan({ mode: "photo" }); }}>
                   <Camera className="size-5" />
+                </Button>
+                <Button variant="secondary" aria-label="Falar a refeição (IA)" onClick={() => { setError(null); setScan({ mode: "voice" }); }}>
+                  <Mic className="size-5" />
                 </Button>
               </div>
               <ul className="flex flex-col">

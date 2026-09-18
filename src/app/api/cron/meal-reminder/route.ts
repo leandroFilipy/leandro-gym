@@ -58,7 +58,7 @@ async function run(req: NextRequest) {
           const delivered = await sendPushToUser(user.id, {
             title: "Bora beber água? 💧",
             body: `Você está em ${fmtL(water.ml)} de ${fmtL(water.goalMl)} hoje.`,
-            url: "/",
+            url: "/agua",
             tag: "water-reminder",
           });
           if (delivered > 0) sent++;

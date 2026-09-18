@@ -13,6 +13,7 @@ import { AiError, isAiConfigured, parseImageDataUrl } from "../ai/gemini";
 import { readNutritionLabel } from "../ai/label";
 import { logError } from "../monitoring/errors";
 import { estimatePlate, type PlateEstimate } from "../ai/plate";
+import { estimateMealText } from "../ai/meal-text";
 import { fail, formToObject, ok, refreshApp, validate, type ActionResult } from "./_utils";
 
 const dateSchema = z.string().refine(isValidDateStr, "Data inválida");
@@ -276,7 +277,7 @@ export async function lookupBarcodeAction(raw: string): Promise<ActionResult<Bar
 
 // ───────────── Foto do prato (IA) ─────────────
 
-const PHOTO_SOURCE = "Estimativa por foto (IA)";
+const AI_SOURCE = { photo: "Estimativa por foto (IA)", text: "Estimativa por texto/voz (IA)" } as const;
 
 export type PlateItem = PlateEstimate["items"][number];
 
@@ -291,15 +292,36 @@ export async function analyzePlatePhotoAction(dataUrl: string): Promise<ActionRe
   try {
     const r = await estimatePlate(image);
     if (!r.isFood || r.items.length === 0) return fail("Não encontrei comida nesta foto. Tente enquadrar o prato de cima.");
-    const items = r.items
-      .filter((i) => i.grams > 0)
-      .map((i) => ({ ...i, name: i.name.trim().slice(0, 80), grams: Math.round(i.grams), kcal: Math.max(0, i.kcal), protein: Math.max(0, i.protein), carbs: Math.max(0, i.carbs), fat: Math.max(0, i.fat) }));
-    return { ok: true, data: { items, note: r.note } };
+    return { ok: true, data: { items: cleanItems(r.items), note: r.note } };
   } catch (e) {
     console.error("[analyzePlatePhotoAction]", e);
     await logAiError(e, "analyzePlatePhotoAction", userId);
     return fail(e instanceof AiError ? e.message : "Falha ao analisar a foto. Tente de novo.");
   }
+}
+
+/** Refeição falada/digitada ("2 ovos e um pão francês") → itens estimados. Não grava nada. */
+export async function analyzeMealTextAction(text: string): Promise<ActionResult<{ items: PlateItem[]; note: string }>> {
+  const userId = await requireUserId();
+  if (!isAiConfigured()) return fail("A IA ainda não foi configurada (falta GEMINI_API_KEY).");
+  const parsed = z.string().trim().min(2, "Diga ou escreva o que você comeu").max(600, "Texto muito longo").safeParse(text);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+
+  try {
+    const r = await estimateMealText(parsed.data);
+    if (!r.isFood || r.items.length === 0) return fail("Não entendi nenhum alimento. Tente algo como “2 ovos mexidos e um pão francês”.");
+    return { ok: true, data: { items: cleanItems(r.items), note: r.note } };
+  } catch (e) {
+    console.error("[analyzeMealTextAction]", e);
+    await logAiError(e, "analyzeMealTextAction", userId);
+    return fail(e instanceof AiError ? e.message : "Falha ao analisar. Tente de novo.");
+  }
+}
+
+function cleanItems(items: PlateItem[]): PlateItem[] {
+  return items
+    .filter((i) => i.grams > 0)
+    .map((i) => ({ ...i, name: i.name.trim().slice(0, 80), grams: Math.round(i.grams), kcal: Math.max(0, i.kcal), protein: Math.max(0, i.protein), carbs: Math.max(0, i.carbs), fat: Math.max(0, i.fat) }));
 }
 
 /** Foto da tabela nutricional → valores para pré-preencher o cadastro do alimento. Não grava nada. */
@@ -342,6 +364,7 @@ function logAiError(error: unknown, action: string, userId: string) {
 const plateItemsSchema = z.object({
   date: dateSchema,
   mealType: z.enum(MealType),
+  source: z.enum(["photo", "text"]).default("photo"),
   items: z
     .array(
       z.object({
@@ -373,7 +396,7 @@ export async function logPlateItemsAction(input: z.input<typeof plateItemsSchema
         data: {
           userId, name: i.name, servingSize: i.grams, unit: FoodUnit.G,
           kcal: i.kcal, protein: i.protein, carbs: i.carbs, fat: i.fat,
-          sourceName: PHOTO_SOURCE, archived: true,
+          sourceName: AI_SOURCE[data.source], archived: true,
         },
       });
       await tx.mealFood.create({ data: { mealId: meal.id, foodId: food.id, quantity: i.grams, ...scaleMacros(food, i.grams) } });

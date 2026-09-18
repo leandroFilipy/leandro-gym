@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "../db";
 import { getSettings } from "../session";
 import { addDays, fromDbDate, startOfIsoWeek, toDbDate, todayIn } from "@/lib/dates";
+import { forgottenMuscles } from "@/lib/domain/forgotten-muscles";
 import { analyzeMuscleVolume } from "@/lib/domain/muscle-volume";
 import { readinessImpact, type ReadinessSample } from "@/lib/domain/readiness";
 import { totalVolume } from "@/lib/domain/volume";
@@ -111,6 +112,40 @@ export async function getWeeklyMuscleVolume(userId: string) {
   }
 
   return { weekStart: monday, hasPlan: Boolean(plan), rows: analyzeMuscleVolume(done, planned) };
+}
+
+// ───────────── Músculos esquecidos ─────────────
+
+const FORGOTTEN_WINDOW_DAYS = 90;
+
+/** Grupos da ficha ativa sem nenhuma série concluída há 10+ dias. */
+export async function getForgottenMuscles(userId: string) {
+  const settings = await getSettings(userId);
+  const today = todayIn(settings.timezone);
+
+  const [plan, rows] = await Promise.all([
+    getActivePlan(userId),
+    db.workoutExercise.findMany({
+      where: { session: { userId, date: { gte: toDbDate(addDays(today, -FORGOTTEN_WINDOW_DAYS)) } }, sets: { some: { completed: true } } },
+      select: { exercise: { select: { muscleGroup: true } }, session: { select: { date: true } } },
+    }),
+  ]);
+  if (!plan) return [];
+
+  const lastTrained: Partial<Record<MuscleGroup, string>> = {};
+  let lastAny: string | null = null;
+  for (const r of rows) {
+    const date = fromDbDate(r.session.date);
+    const g = r.exercise.muscleGroup;
+    if (!lastTrained[g] || date > lastTrained[g]!) lastTrained[g] = date;
+    if (!lastAny || date > lastAny) lastAny = date;
+  }
+
+  const planned = plan.days
+    .filter((d) => d.type !== "REST")
+    .flatMap((d) => d.exercises.map((e) => ({ group: e.exercise.muscleGroup, dayName: d.name })));
+
+  return forgottenMuscles({ planned, lastTrained, today, trainedRecently: lastAny !== null && lastAny >= addDays(today, -7) });
 }
 
 // ───────────── Prontidão × desempenho ─────────────

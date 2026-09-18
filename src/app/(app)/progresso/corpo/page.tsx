@@ -56,7 +56,11 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
     b && b !== a ? getBodyPhoto(userId, b, pose) : null,
   ]);
 
-  const gallery = [...new Set(photos.map((p) => p.date))].map((date) => ({ date, items: photos.filter((p) => p.date === date) }));
+  // Última foto de cada pose (lista vem da mais recente): guia da câmera.
+  const lastByPose: Partial<Record<PhotoPose, string>> = {};
+  for (const p of photos) lastByPose[p.pose] ??= `/api/body-photos/${p.id}?size=full`;
+
+  const gallery =[...new Set(photos.map((p) => p.date))].map((date) => ({ date, items: photos.filter((p) => p.date === date) }));
 
   return (
     <>
@@ -140,7 +144,7 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
 
         <Card>
           <CardHeader title="Nova foto" />
-          <PhotoUploader today={today} />
+          <PhotoUploader today={today} lastByPose={lastByPose} />
         </Card>
 
         {photos.length === 0 ? (

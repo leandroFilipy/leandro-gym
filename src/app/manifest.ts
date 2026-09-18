@@ -16,9 +16,12 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    // Segurar o ícone do app (Android/Chrome e Windows) abre este menu — o "widget" possível num PWA.
     shortcuts: [
-      { name: "Treino de hoje", url: "/treino" },
-      { name: "Dieta", url: "/dieta" },
+      { name: "Treino de hoje", short_name: "Treino", url: "/treino", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Beber água", short_name: "Água", url: "/agua", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Registrar refeição", short_name: "Dieta", url: "/dieta", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Registrar peso", short_name: "Peso", url: "/progresso/peso", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }
