@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
-import { RotateCw } from "lucide-react";
+import { useCallback, useId, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { Box, Loader2, RotateCw } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { MapLevel } from "@/lib/domain/muscle-map";
 import { MUSCLE_LABEL } from "@/lib/labels";
@@ -21,23 +22,36 @@ const TODAY_LABEL: Record<MapLevel, string> = { 0: "Não treinado", 1: "Leve", 2
 
 type Side = "front" | "back";
 
+// three.js (~600 KB) só é baixado quando o usuário abre o 3D.
+const Body3D = dynamic(() => import("./Body3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="mx-auto grid aspect-[3/4] w-full max-w-sm place-items-center text-sm text-muted">
+      <span className="flex items-center gap-2">
+        <Loader2 className="size-4 animate-spin" /> Carregando 3D…
+      </span>
+    </div>
+  ),
+});
+
 /** Boneco anatômico que vira (frente ↔ costas), cada grupo pintado pelo volume do período. */
 export function MuscleMap({ data }: { data: MuscleMapData }) {
   const uid = useId().replace(/:/g, "");
   const byGroup = new Map(data.muscles.map((m) => [m.group, m]));
   const [side, setSide] = useState<Side>("front");
+  const [mode, setMode] = useState<"2d" | "3d">("2d");
+  const levels = useMemo(() => Object.fromEntries(data.muscles.map((m) => [m.group, m.level])) as Partial<Record<MuscleGroup, MapLevel>>, [data.muscles]);
   const [selected, setSelected] = useState<MuscleGroup | null>(() => data.muscles.find((m) => m.sets > 0)?.group ?? null);
   const sel = selected ? byGroup.get(selected) : null;
   const levelText = data.period === "hoje" ? TODAY_LABEL : LEVEL_LABEL;
 
-  const select = (g: MuscleGroup) => {
+  const select = useCallback((g: MuscleGroup) => {
     setSelected(g);
     // Músculo que só aparece do outro lado: vira o boneco.
     const onFront = FRONT_MUSCLES.some((s) => s.group === g);
     const onBack = BACK_MUSCLES.some((s) => s.group === g);
-    if (side === "front" && !onFront && onBack) setSide("back");
-    if (side === "back" && !onBack && onFront) setSide("front");
-  };
+    setSide((side) => (side === "front" && !onFront && onBack ? "back" : side === "back" && !onBack && onFront ? "front" : side));
+  }, []);
 
   const figure = (which: Side) => {
     const shapes: MuscleShape[] = which === "front" ? FRONT_MUSCLES : BACK_MUSCLES;
@@ -105,19 +119,36 @@ export function MuscleMap({ data }: { data: MuscleMapData }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-center gap-2">
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-surface-2 p-1">
-          {(["front", "back"] as const).map((s) => (
-            <button key={s} type="button" onClick={() => setSide(s)} className={cn("h-8 rounded-sm px-4 text-sm", side === s ? "bg-surface font-semibold" : "text-muted")}>
-              {s === "front" ? "Frente" : "Costas"}
+        {mode === "2d" && (
+          <>
+            <div className="grid grid-cols-2 gap-1 rounded-md bg-surface-2 p-1">
+              {(["front", "back"] as const).map((s) => (
+                <button key={s} type="button" onClick={() => setSide(s)} className={cn("h-8 rounded-sm px-4 text-sm", side === s ? "bg-surface font-semibold" : "text-muted")}>
+                  {s === "front" ? "Frente" : "Costas"}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setSide(side === "front" ? "back" : "front")} aria-label="Virar o corpo" className="grid size-10 place-items-center rounded-md border border-line text-muted hover:text-fg">
+              <RotateCw className="size-4" />
             </button>
-          ))}
-        </div>
-        <button type="button" onClick={() => setSide(side === "front" ? "back" : "front")} aria-label="Virar o corpo" className="grid size-10 place-items-center rounded-md border border-line text-muted hover:text-fg">
-          <RotateCw className="size-4" />
+          </>
+        )}
+        <button
+          type="button"
+          onClick={() => setMode(mode === "2d" ? "3d" : "2d")}
+          className={cn("flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-semibold", mode === "3d" ? "border-accent text-accent" : "border-line text-muted hover:text-fg")}
+        >
+          <Box className="size-4" /> {mode === "3d" ? "Voltar ao 2D" : "Ver em 3D"}
         </button>
       </div>
 
-      {/* Cartão que gira em 3D: frente e costas em faces opostas. */}
+      {mode === "3d" ? (
+        <>
+          <Body3D levels={levels} selected={selected} onSelect={select} />
+          <p className="-mt-2 text-center text-xs text-faint">Arraste para girar, pinça para zoom, toque no músculo.</p>
+        </>
+      ) : (
+      /* Cartão que gira em 3D: frente e costas em faces opostas. */
       <div className="mx-auto aspect-[200/440] w-full max-w-[240px] [perspective:1200px]">
         <div
           className="relative size-full transition-transform duration-700 ease-out [transform-style:preserve-3d]"
@@ -131,6 +162,7 @@ export function MuscleMap({ data }: { data: MuscleMapData }) {
           </div>
         </div>
       </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted" aria-hidden>
         {([0, 1, 2, 3] as const).map((l) => (

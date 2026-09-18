@@ -47,6 +47,9 @@ export default async function CorpoPage({ searchParams }: PageProps<"/corpo">) {
             ))}
           </div>
           <MuscleMap key={period} data={map} />
+          <p className="mt-3 text-center text-[11px] text-faint">
+            Modelo 3D: BodyParts3D © Database Center for Life Science (DBCLS), licença CC BY-SA 2.1 JP.
+          </p>
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
