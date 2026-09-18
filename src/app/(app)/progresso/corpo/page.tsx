@@ -9,6 +9,7 @@ import { MeasurementChart } from "@/features/body/MeasurementChart";
 import { MeasurementForm } from "@/features/body/MeasurementForm";
 import { PhotoCompareControls } from "@/features/body/PhotoCompareControls";
 import { PhotoUploader } from "@/features/body/PhotoUploader";
+import { BodyTimelapse, type TimelapseFrame } from "@/features/body/BodyTimelapse";
 import { cn } from "@/lib/cn";
 import { daysBetween, todayIn } from "@/lib/dates";
 import { MEASUREMENT_FIELDS, measurementDeltas, waistToHip, type MeasurementValues } from "@/lib/domain/measurements";
@@ -55,6 +56,11 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
     a ? getBodyPhoto(userId, a, pose) : null,
     b && b !== a ? getBodyPhoto(userId, b, pose) : null,
   ]);
+
+  // Timelapse: fotos de cada pose da mais antiga para a mais recente.
+  const framesByPose = Object.fromEntries(
+    POSES.map((p) => [p, photos.filter((x) => x.pose === p).map((x) => ({ id: x.id, date: x.date })).reverse()]),
+  ) as Record<PhotoPose, TimelapseFrame[]>;
 
   // Última foto de cada pose (lista vem da mais recente): guia da câmera.
   const lastByPose: Partial<Record<PhotoPose, string>> = {};
@@ -179,6 +185,13 @@ export default async function BodyPage({ searchParams }: PageProps<"/progresso/c
                 <p className="mt-2 text-center text-xs text-muted">{Math.abs(daysBetween(a, b))} dias de diferença</p>
               )}
             </Card>
+
+            {POSES.some((p) => framesByPose[p].length >= 2) && (
+              <Card>
+                <CardHeader title="Evolução em vídeo" />
+                <BodyTimelapse framesByPose={framesByPose} />
+              </Card>
+            )}
 
             <Card>
               <CardHeader title="Galeria" />

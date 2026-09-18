@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "../db";
 import { getSettings } from "../session";
-import { addDays, fromDbDate, isoWeekday, startOfIsoWeek, toDbDate, todayIn, type DateStr } from "@/lib/dates";
+import { addDays, daysBetween, fromDbDate, isoWeekday, startOfIsoWeek, toDbDate, todayIn, type DateStr } from "@/lib/dates";
 import { suggestProgression, type ProgressionSuggestion } from "@/lib/domain/progression";
 import { adjustForReadiness, readinessLevel } from "@/lib/domain/readiness";
 import { bestSet, totalVolume } from "@/lib/domain/volume";
@@ -311,6 +311,14 @@ export async function getSessionSummary(userId: string, sessionId: string) {
   const durationMin =
     session.finishedAt ? Math.round((session.finishedAt.getTime() - session.startedAt.getTime()) / 60000) : null;
 
+  // Último treino (qualquer um, com série feita) antes deste: mede quanto tempo o usuário sumiu.
+  const lastBefore = await db.workoutSession.findFirst({
+    where: { userId, date: { lt: session.date }, exercises: { some: { sets: { some: { completed: true } } } } },
+    orderBy: { date: "desc" },
+    select: { date: true },
+  });
+  const daysSincePrevious = lastBefore ? daysBetween(fromDbDate(lastBefore.date), fromDbDate(session.date)) : null;
+
   return {
     id: session.id,
     name: session.name,
@@ -328,6 +336,7 @@ export async function getSessionSummary(userId: string, sessionId: string) {
       volume: totalVolume(e.sets),
     })),
     records: records.map((r) => ({ exercise: r.exercise.name, weight: r.weight, repetitions: r.repetitions })),
+    daysSincePrevious,
   };
 }
 

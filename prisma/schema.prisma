@@ -151,6 +151,10 @@ model UserSettings {
   waterGoalMl           Int? // null = automático (35 ml por kg de peso)
   waterRemindersEnabled Boolean @default(false) // push se a água do dia estiver atrasada
 
+  // Tom das notificações ("patrão") e cobrança da noite (treino faltado, proteína baixa)
+  patraoTone        PatraoTone @default(MANSO)
+  nightCheckEnabled Boolean    @default(false)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -463,6 +467,13 @@ model BodyMeasurement {
   createdAt DateTime @default(now())
 
   @@unique([userId, date])
+}
+
+// Intensidade das notificações: educado, zoeira pesada ou humilhação total.
+enum PatraoTone {
+  MANSO
+  SEM_DO
+  CARRASCO
 }
 
 enum PhotoPose {

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { db } from "../db";
 import { requireUserId } from "../session";
-import { ActivityLevel, DietGoal, Sex } from "@/generated/prisma/enums";
+import { ActivityLevel, DietGoal, PatraoTone, Sex } from "@/generated/prisma/enums";
 import { isValidDateStr, toDbDate } from "@/lib/dates";
 import { recalcAutoNutritionGoal } from "../services/nutrition-goal";
 import { fail, ok, refreshApp, validate, type ActionResult } from "./_utils";
@@ -31,6 +31,8 @@ const settingsSchema = z.object({
   restDayCarbsCut: z.coerce.number().int().min(0, "Corte inválido").max(300, "Corte de carboidrato muito alto"),
   mealRemindersEnabled: checkbox,
   waterRemindersEnabled: checkbox,
+  patraoTone: z.enum(PatraoTone),
+  nightCheckEnabled: checkbox,
   waterGoalMl: z.preprocess((v) => (v === "" || v == null ? null : v), z.coerce.number().int().min(500, "Meta de água muito baixa").max(8000, "Meta de água muito alta").nullable()),
   timezone: z.string().refine((tz) => {
     try {

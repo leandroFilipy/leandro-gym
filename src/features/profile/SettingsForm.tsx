@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { Field, FormError, SelectField, SubmitButton, Toggle } from "@/components/ui/Field";
 import { saveSettingsAction } from "@/server/actions/settings";
+import { PATRAO_TONE_LABEL, PATRAO_TONES } from "@/lib/labels";
+import type { PatraoTone } from "@/generated/prisma/enums";
 
 export interface SettingsValues {
   defaultRestSeconds: number;
@@ -22,6 +24,8 @@ export interface SettingsValues {
   mealRemindersEnabled: boolean;
   waterRemindersEnabled: boolean;
   waterGoalMl: number | null;
+  patraoTone: PatraoTone;
+  nightCheckEnabled: boolean;
   timezone: string;
   dailyEmailEnabled: boolean;
   dailyEmailTime: string;
@@ -176,6 +180,20 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           step={50}
           defaultValue={values.waterGoalMl ?? ""}
           placeholder="Ex.: 3000"
+        />
+        <SelectField label="Tom das notificações" name="patraoTone" defaultValue={values.patraoTone}>
+          {PATRAO_TONES.map((t) => (
+            <option key={t} value={t}>
+              {PATRAO_TONE_LABEL[t]}
+            </option>
+          ))}
+        </SelectField>
+        <p className="-mt-1 text-xs text-muted">Vale para todos os lembretes. O Carrasco não tem dó nenhum: zoa preguiça, promessa quebrada e o shape.</p>
+        <Toggle
+          label="Cobrança da noite"
+          description="Push ~21h se o treino da ficha de hoje não foi feito ou se a proteína ficou bem abaixo da meta (requer push ativado)"
+          name="nightCheckEnabled"
+          defaultChecked={values.nightCheckEnabled}
         />
         <SelectField label="Fuso horário" name="timezone" defaultValue={values.timezone}>
           {zones.map((z) => (

@@ -102,6 +102,11 @@
 - [x] Refeição por voz/texto: Web Speech pt-BR → Gemini estima itens → mesma revisão da foto do prato
 - [x] Câmera com guia nas fotos do corpo: última foto da pose semitransparente, temporizador, trocar câmera
 - [x] Atalhos do ícone (Treino, Água, Refeição, Peso) + tela rápida `/agua` (PWA não tem widget de tela inicial)
+- [x] Notificações do "patrão" com tom Manso / Sem dó / Carrasco (`lib/domain/patrao.ts`, frases geradas de
+      `docs/NOTIFICACOES.md`): refeição, água, cobrança da noite (treino faltado, proteína), platô no push do
+      treino do dia e "Recado do patrão" no resumo (elogio ou "voltou depois de sumir")
+- [x] Timelapse das fotos por pose (player + vídeo para compartilhar via MediaRecorder)
+- [ ] Patentes gaúchas (Guri → Monarca do Pampa), patente por exercício, histórico — frases de "perto de cair" e "rebaixado" já prontas
 - [ ] Cardápio da semana (adiado — tabela ainda não criada)
 - [ ] Desafio semanal entre amigos (adiado — tabela ainda não criada)
 

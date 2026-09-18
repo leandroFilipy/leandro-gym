@@ -98,6 +98,8 @@ export default async function ProfilePage() {
               mealRemindersEnabled: settings.mealRemindersEnabled,
               waterRemindersEnabled: settings.waterRemindersEnabled,
               waterGoalMl: settings.waterGoalMl,
+              patraoTone: settings.patraoTone,
+              nightCheckEnabled: settings.nightCheckEnabled,
               timezone: settings.timezone,
               dailyEmailEnabled: settings.dailyEmailEnabled,
               dailyEmailTime: settings.dailyEmailTime,

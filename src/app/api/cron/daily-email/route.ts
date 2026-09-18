@@ -3,7 +3,10 @@ import { db } from "@/server/db";
 import { isAuthorizedCron } from "@/server/cron/auth";
 import { getEmailSender, dailyWorkoutEmail, type DailyWorkoutExercise } from "@/server/email";
 import { sendPushToUser } from "@/server/push";
+import { getStagnationAlerts } from "@/server/services/insights";
+import { getPreviousPerformance } from "@/server/services/workouts";
 import { hourIn, isoWeekday, todayIn } from "@/lib/dates";
+import { pickMessage, type PatraoVars } from "@/lib/domain/patrao";
 
 // Executa no runtime Node (Prisma + pg não rodam no edge).
 export const runtime = "nodejs";
@@ -27,7 +30,7 @@ async function run(req: NextRequest) {
       id: true,
       email: true,
       name: true,
-      settings: { select: { timezone: true, dailyEmailTime: true, dailyEmailEnabled: true, pushEnabled: true } },
+      settings: { select: { timezone: true, dailyEmailTime: true, dailyEmailEnabled: true, pushEnabled: true, patraoTone: true } },
     },
   });
 
@@ -64,6 +67,7 @@ async function run(req: NextRequest) {
               exercises: {
                 orderBy: { order: "asc" },
                 select: {
+                  exerciseId: true,
                   plannedSets: true,
                   repMin: true,
                   repMax: true,
@@ -95,9 +99,15 @@ async function run(req: NextRequest) {
       }
 
       if (settings.pushEnabled) {
+        // Sem dó / Carrasco: se um exercício de hoje está em platô, o corpo do push vira cobrança.
+        const plateau = !isRest && settings.patraoTone !== "MANSO" ? await plateauVars(user.id, day?.exercises.map((e) => e.exerciseId) ?? []) : null;
         const delivered = await sendPushToUser(user.id, {
           title: isRest ? "Hoje é dia de descanso 😴" : `Treino de hoje: ${dayName}`,
-          body: isRest ? "Sem treino na ficha ativa. Foco na recuperação." : `${exercises.length} exercícios — bora treinar! 💪`,
+          body: isRest
+            ? "Sem treino na ficha ativa. Foco na recuperação."
+            : plateau
+              ? pickMessage("plateau", settings.patraoTone, plateau, `${user.id}:${date}`)
+              : `${exercises.length} exercícios — bora treinar! 💪`,
           url: "/treino",
           tag: "daily-workout",
         });
@@ -109,6 +119,16 @@ async function run(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, candidates: users.length, emails, pushes, skipped, errors });
+}
+
+/** Primeiro exercício do dia em platô/regressão, com a carga mais alta do último treino dele. */
+async function plateauVars(userId: string, exerciseIds: string[]): Promise<PatraoVars | null> {
+  if (exerciseIds.length === 0) return null;
+  const alert = (await getStagnationAlerts(userId)).find((a) => exerciseIds.includes(a.exerciseId));
+  if (!alert) return null;
+  const last = await getPreviousPerformance(userId, alert.exerciseId);
+  const top = last?.sets.length ? Math.max(...last.sets.map((s) => s.weight)) : null;
+  return top ? { exercicio: alert.name, carga: top.toLocaleString("pt-BR") } : null;
 }
 
 export const GET = run;

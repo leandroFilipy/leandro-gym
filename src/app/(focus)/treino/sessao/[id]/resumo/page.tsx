@@ -9,10 +9,13 @@ import { percentChange } from "@/lib/domain/volume";
 import { fmtFullDate, fmtInt, fmtPercent } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { deleteSessionAction, reopenSessionAction } from "@/server/actions/sessions";
-import { requireUserId } from "@/server/session";
+import { getSettings, requireUserId } from "@/server/session";
 import { getSessionSummary } from "@/server/services/workouts";
+import { pickMessage } from "@/lib/domain/patrao";
 
 export const metadata: Metadata = { title: "Resumo do treino" };
+
+const COMEBACK_DAYS = 7;
 
 export default async function SummaryPage({ params }: PageProps<"/treino/sessao/[id]/resumo">) {
   const { id } = await params;
@@ -21,6 +24,23 @@ export default async function SummaryPage({ params }: PageProps<"/treino/sessao/
   if (!s) notFound();
 
   const change = s.previousVolume !== null ? percentChange(s.volume, s.previousVolume) : null;
+
+  // Recado do patrão: quem sumiu 7+ dias leva "voltou"; senão, elogio (com o recorde, se houver).
+  const { patraoTone } = await getSettings(userId);
+  const record = s.records[0];
+  const comeback = s.daysSincePrevious !== null && s.daysSincePrevious >= COMEBACK_DAYS;
+  const patrao = s.finished
+    ? pickMessage(
+        comeback ? "comeback" : "praise",
+        patraoTone,
+        comeback
+          ? { dias: String(s.daysSincePrevious) }
+          : record
+            ? { exercicio: record.exercise, carga: record.weight.toLocaleString("pt-BR") }
+            : {},
+        `${userId}:${s.id}`,
+      )
+    : null;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-10 pt-[max(1.5rem,env(safe-area-inset-top))]">
@@ -32,6 +52,13 @@ export default async function SummaryPage({ params }: PageProps<"/treino/sessao/
           {s.durationMin !== null && ` · ${s.durationMin} min`}
         </p>
       </div>
+
+      {patrao && (
+        <Card className={cn("border-l-4", comeback ? "border-l-warn" : "border-l-accent")}>
+          <div className="eyebrow mb-1">Recado do patrão</div>
+          <p className="font-display text-lg font-bold italic leading-snug">{patrao}</p>
+        </Card>
+      )}
 
       <Card className="grid grid-cols-3 gap-2 text-center">
         <div>

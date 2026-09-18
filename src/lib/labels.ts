@@ -1,4 +1,4 @@
-import type { DayType, FoodUnit, MealType, MuscleGroup, PhotoPose } from "@/generated/prisma/enums";
+import type { DayType, FoodUnit, MealType, MuscleGroup, PatraoTone, PhotoPose } from "@/generated/prisma/enums";
 import type { MeasurementField } from "./domain/measurements";
 
 export const MUSCLE_LABEL: Record<MuscleGroup, string> = {
@@ -99,3 +99,11 @@ export const POSE_LABEL: Record<PhotoPose, string> = {
 };
 
 export const POSES = Object.keys(POSE_LABEL) as PhotoPose[];
+
+export const PATRAO_TONE_LABEL: Record<PatraoTone, string> = {
+  MANSO: "Manso — avisos educados",
+  SEM_DO: "Sem dó — zoeira pesada",
+  CARRASCO: "Carrasco — humilhação total",
+};
+
+export const PATRAO_TONES = Object.keys(PATRAO_TONE_LABEL) as PatraoTone[];
